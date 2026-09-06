@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data / runtime（图纸、审核报告、数据库等运行产物，不入库）
+data/
+*.log
+
+# 运营/推广内容（非程序源码）
+article/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# 【重要】本地个人配置（含 API Key 等敏感信息，绝不提交到 GitHub）
+# API Key 应通过用户环境变量设置，不要写在任何项目文件中
+*.local
+*.local.bat
+config.local.*
+secrets.*
+
