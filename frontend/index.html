@@ -53,6 +53,19 @@ input { font-family: inherit; }
 
 .sidebar-section { padding: 8px 12px; }
 .sidebar-section-title { font-size: 11px; color: var(--text-tertiary); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.sidebar-section-title.collapsible { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; border-radius: 4px; transition: background 0.15s; }
+.sidebar-section-title.collapsible:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.collapse-arrow { font-size: 10px; transition: transform 0.2s; display: inline-block; }
+.collapse-arrow.collapsed { transform: rotate(-90deg); }
+.history-list.collapsed { display: none; }
+
+/* 历史记录右键菜单 */
+.context-menu { position: fixed; z-index: 9999; min-width: 150px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 4px; display: none; }
+.context-menu.show { display: block; }
+.context-menu-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.context-menu-item:hover { background: var(--bg-hover); }
+.context-menu-item.danger { color: var(--danger); }
+.context-menu-item.danger:hover { background: #ffece8; }
 
 .history-list { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
 .history-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
@@ -216,6 +229,7 @@ input { font-family: inherit; }
 .issue-risk { font-size: 11px; color: var(--warning); background: rgba(255,150,0,0.08); padding: 6px 8px; border-radius: 6px; margin-bottom: 6px; }
 .issue-suggestion { font-size: 12px; color: var(--text-primary); background: var(--accent-light); padding: 8px 10px; border-radius: 6px; line-height: 1.5; }
 .issue-suggestion::before { content: "💡 建议："; font-weight: 600; }
+html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-weight: 600; }
 .rule-id-tag { font-size: 10px; font-weight: 700; font-family: monospace; color: var(--accent); background: var(--accent-light); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
 .ft-DRAWING_ERROR { background: #ffece8; color: var(--danger); }
 .ft-AMBIGUITY { background: #fff7e8; color: var(--warning); }
@@ -328,52 +342,64 @@ input { font-family: inherit; }
     <div class="sidebar-header">
       <div class="sidebar-logo">审</div>
       <div>
-        <div class="sidebar-title">2D图纸审核高手</div>
+        <div class="sidebar-title" data-i18n="sidebar.title">2D图纸审核高手</div>
         <div class="sidebar-subtitle">Drawing Audit Expert</div>
       </div>
     </div>
     <button class="new-task-btn" onclick="resetToNewTask()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      新审核任务
+      <span data-i18n="sidebar.newTask">新审核任务</span>
     </button>
     <div class="sidebar-nav">
       <div class="sidebar-nav-item" data-feature="chunking" onclick="showFeaturePage('chunking')">
         <div class="sidebar-nav-icon">🔍</div>
-        <span>智能分块审核</span>
+        <span data-i18n="nav.chunking">智能分块审核</span>
       </div>
       <div class="sidebar-nav-item" data-feature="rulecheck" onclick="showFeaturePage('rulecheck')">
         <div class="sidebar-nav-icon">⚙️</div>
-        <span>规则前置检查</span>
+        <span data-i18n="nav.rulecheck">规则前置检查</span>
       </div>
       <div class="sidebar-nav-item" data-feature="dashboard" onclick="showFeaturePage('dashboard')">
         <div class="sidebar-nav-icon">📊</div>
-        <span>汇总看板</span>
+        <span data-i18n="nav.dashboard">汇总看板</span>
       </div>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-section-title">最近审核</div>
+      <div class="sidebar-section-title collapsible" onclick="toggleHistory()">
+        <span class="collapse-arrow" id="collapseArrow">▾</span>
+        <span data-i18n="sidebar.recent">最近审核</span>
+      </div>
     </div>
     <div class="history-list" id="historyList">
-      <div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px;">暂无历史记录</div>
+      <div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px;" data-i18n="history.empty">暂无历史记录</div>
     </div>
     <div class="sidebar-footer">
       <div class="status-dot" id="wsStatusDot"></div>
-      <div class="status-text" id="wsStatusText">连接中...</div>
-      <span id="demoModeBadge" style="display:none; margin-left:8px; padding:2px 8px; background:#fff7e8; color:#d97706; border-radius:4px; font-size:10px; font-weight:600;">演示模式</span>
-      <button class="header-btn" onclick="openApiConfigModal()" title="配置 AI API Key" style="margin-left:auto; padding:4px 8px; font-size:12px;">
-        ⚙️ 配置
+      <div class="status-text" id="wsStatusText" data-i18n="ws.connecting">连接中...</div>
+      <span id="demoModeBadge" style="display:none; margin-left:8px; padding:2px 8px; background:#fff7e8; color:#d97706; border-radius:4px; font-size:10px; font-weight:600;" data-i18n="demoMode">演示模式</span>
+      <button class="header-btn" onclick="openApiConfigModal()" data-i18n-title="config.title" title="配置 AI API Key" style="margin-left:auto; padding:4px 8px; font-size:12px;">
+        <span data-i18n="config.btn">⚙️ 配置</span>
       </button>
     </div>
   </aside>
 
+  <!-- 历史记录右键菜单 -->
+  <div class="context-menu" id="contextMenu">
+    <div style="padding:6px 12px 4px; font-size:11px; color:var(--text-tertiary); border-bottom:1px solid var(--border-color); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" id="contextMenuName" data-i18n="ctx.title">记录</div>
+    <div class="context-menu-item danger" id="contextMenuDelete" onclick="deleteHistoryItem(this.getAttribute('data-task-id'))">
+      <span data-i18n="ctx.delete">🗑️ 删除此记录</span>
+    </div>
+  </div>
+
   <!-- 主区域 -->
   <main class="main">
     <div class="main-header">
-      <div class="main-header-title" id="mainHeaderTitle">2D图纸审核</div>
+      <div class="main-header-title" id="mainHeaderTitle" data-i18n="mainHeader.default">2D图纸审核</div>
       <div class="main-header-actions">
+        <button class="header-btn" onclick="toggleLang()" id="langToggle" data-i18n-title="lang.switch" title="切换界面语言" style="padding:6px 10px; font-size:12px; font-weight:600;">EN</button>
         <button class="header-btn" onclick="exportSummary()" id="exportBtn" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          导出报告
+          <span data-i18n="export.report">导出报告</span>
         </button>
       </div>
     </div>
@@ -384,9 +410,9 @@ input { font-family: inherit; }
         <div class="empty-logo">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         </div>
-        <div class="empty-title">今天要审核哪批图纸？</div>
-        <div class="empty-desc">选择包含 PDF 2D 图纸的文件夹，AI 将逐张进行专业审核，<br>1对1 给出修改建议并保存到对应文件夹。</div>
-        <div class="empty-limit">⚠️ 每次审核不超过 10 张 PDF 图纸；暂不支持 A1、A0 大尺寸图纸</div>
+        <div class="empty-title" data-i18n="empty.title">今天要审核哪批图纸？</div>
+        <div class="empty-desc" data-i18n-html="empty.desc">选择包含 PDF 2D 图纸的文件夹，AI 将逐张进行专业审核，<br>1对1 给出修改建议并保存到对应文件夹。</div>
+        <div class="empty-limit" data-i18n="empty.limit">⚠️ 每次审核不超过 10 张 PDF 图纸；暂不支持 A1、A0 大尺寸图纸</div>
       </div>
 
       <!-- 功能详情页容器 -->
@@ -404,11 +430,11 @@ input { font-family: inherit; }
       <div class="input-container">
         <div class="input-wrapper">
           <div class="input-row">
-            <button class="input-tag" onclick="browseFolder()" title="选择文件夹">
+            <button class="input-tag" onclick="browseFolder()" data-i18n-title="folder.browse" title="选择文件夹">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <input type="text" class="folder-input" id="folderInput" placeholder="输入或粘贴图纸文件夹路径，例如 D:\图纸\项目A\...  也可直接拖入 PDF 图纸" onkeydown="handleInputKey(event)">
-            <button class="input-tag" onclick="triggerFileUpload()" title="上传 PDF 图纸文件">
+            <input type="text" class="folder-input" id="folderInput" data-i18n-placeholder="folder.placeholder" placeholder="输入或粘贴图纸文件夹路径，例如 D:\图纸\项目A\...  也可直接拖入 PDF 图纸" onkeydown="handleInputKey(event)">
+            <button class="input-tag" onclick="triggerFileUpload()" data-i18n-title="folder.upload" title="上传 PDF 图纸文件">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </button>
             <input type="file" id="fileInput" accept=".pdf" multiple style="display:none;" onchange="handleFileSelect(event)">
@@ -419,18 +445,18 @@ input { font-family: inherit; }
           <div class="input-actions">
             <button class="input-tag active" id="checklistTag" onclick="openChecklistModal()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              审核标准
+              <span data-i18n="audit.standard">审核标准</span>
             </button>
             <button class="input-tag" id="recursiveTag" onclick="toggleRecursive()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-              递归子目录
+              <span data-i18n="recursive">递归子目录</span>
             </button>
             <span style="flex:1;"></span>
             <span style="font-size:11px; color:var(--text-tertiary);" id="checklistCount">9项检查已启用</span>
           </div>
         </div>
-        <div class="input-hint">审核报告将自动保存到图纸所在文件夹（.md + .json），批量审核完成后生成汇总报告</div>
-        <div class="footer-credit">@AiworkLab 出品</div>
+        <div class="input-hint" data-i18n="input.hint">审核报告将自动保存到图纸所在文件夹（.md + .json），批量审核完成后生成汇总报告</div>
+        <div class="footer-credit" data-i18n="footer.credit">@AiworkLab 出品</div>
       </div>
     </div>
   </main>
@@ -439,8 +465,8 @@ input { font-family: inherit; }
   <div class="drop-overlay" id="dropOverlay">
     <div class="drop-overlay-box">
       <div class="drop-overlay-icon">📄</div>
-      <div>松开以上传 PDF 图纸</div>
-      <div class="drop-overlay-sub">支持一次拖入多张图纸</div>
+      <div data-i18n="drop.title">松开以上传 PDF 图纸</div>
+      <div class="drop-overlay-sub" data-i18n="drop.sub">支持一次拖入多张图纸</div>
     </div>
   </div>
 </div>
@@ -449,14 +475,14 @@ input { font-family: inherit; }
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-header">
-    <div class="drawer-title" id="drawerTitle">图纸详情</div>
+    <div class="drawer-title" id="drawerTitle" data-i18n="drawer.title">图纸详情</div>
     <button class="drawer-close" onclick="closeDrawer()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
   <div class="drawer-body">
     <div class="drawer-left" id="drawerLeft">
-      <div style="color:#666; font-size:13px;">加载图纸预览...</div>
+      <div style="color:#666; font-size:13px;" data-i18n="drawer.loading">加载图纸预览...</div>
     </div>
     <div class="drawer-right" id="drawerRight"></div>
   </div>
@@ -466,15 +492,15 @@ input { font-family: inherit; }
 <div class="modal-overlay" id="checklistModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">选择审核检查项</div>
+      <div class="modal-title" data-i18n="modal.checklistTitle">选择审核检查项</div>
       <button class="drawer-close" onclick="closeChecklistModal()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body" id="checklistBody"></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeChecklistModal()">取消</button>
-      <button class="btn btn-primary" onclick="applyChecklist()">应用</button>
+      <button class="btn btn-secondary" onclick="closeChecklistModal()" data-i18n="modal.cancel">取消</button>
+      <button class="btn btn-primary" onclick="applyChecklist()" data-i18n="modal.apply">应用</button>
     </div>
   </div>
 </div>
@@ -483,13 +509,13 @@ input { font-family: inherit; }
 <div class="modal-overlay" id="apiConfigModal">
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
-      <div class="modal-title">⚙️ AI API 配置</div>
+      <div class="modal-title" data-i18n="api.title">⚙️ AI API 配置</div>
       <button class="drawer-close" onclick="closeApiConfigModal()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body">
-      <div style="margin-bottom:16px; padding:12px; background:#f0f7ff; border-radius:8px; font-size:12px; color:#1e40af; line-height:1.6;">
+      <div style="margin-bottom:16px; padding:12px; background:#f0f7ff; border-radius:8px; font-size:12px; color:#1e40af; line-height:1.6;" data-i18n-html="api.security">
         <strong>🔒 安全说明</strong><br>
         API Key 仅保存在本地 <code>data/ai_config.json</code>，不会上传到任何服务器，也不会提交到 GitHub。
       </div>
@@ -508,19 +534,19 @@ input { font-family: inherit; }
         <div id="apiKeyCurrent" style="margin-top:6px; font-size:11px; color:var(--text-tertiary);"></div>
       </div>
       <div style="margin-bottom:14px;">
-        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text-primary);">Model 名称</label>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text-primary);" data-i18n="api.model">Model 名称</label>
         <input type="text" id="apiModel" placeholder="agnes-2.5-flash"
                style="width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; font-size:13px; box-sizing:border-box;">
       </div>
       <div style="padding:10px; background:#fffbeb; border-radius:8px; font-size:11px; color:#92400e; line-height:1.6;">
-        <strong>Agnes 免费 API 示例：</strong><br>
+        <strong data-i18n="api.example">Agnes 免费 API 示例：</strong><br>
         Base URL: <code>https://apihub.agnes-ai.cn/v1</code><br>
         Model: <code>agnes-2.5-flash</code>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeApiConfigModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveApiConfig()">保存配置</button>
+      <button class="btn btn-secondary" onclick="closeApiConfigModal()" data-i18n="modal.cancel">取消</button>
+      <button class="btn btn-primary" onclick="saveApiConfig()" data-i18n="api.save">保存配置</button>
     </div>
   </div>
 </div>
@@ -529,10 +555,484 @@ input { font-family: inherit; }
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+// ========== 国际化（界面语言切换，审核内容保持中文） ==========
+const I18N = {
+  zh: {
+    'sidebar.title': '2D图纸审核高手',
+    'sidebar.newTask': '新审核任务',
+    'nav.chunking': '智能分块审核',
+    'nav.rulecheck': '规则前置检查',
+    'nav.dashboard': '汇总看板',
+    'sidebar.recent': '最近审核',
+    'history.empty': '暂无历史记录',
+    'ws.connecting': '连接中...',
+    'ws.connected': '已连接',
+    'ws.reconnecting': '已断开，重连中...',
+    'demoMode': '演示模式',
+    'config.title': '配置 AI API Key',
+    'config.btn': '配置',
+    'ctx.title': '记录',
+    'ctx.delete': '🗑️ 删除此记录',
+    'mainHeader.default': '2D图纸审核',
+    'export.report': '导出报告',
+    'empty.title': '今天要审核哪批图纸？',
+    'empty.desc': '选择包含 PDF 2D 图纸的文件夹，AI 将逐张进行专业审核，<br>1对1 给出修改建议并保存到对应文件夹。',
+    'empty.limit': '⚠️ 每次审核不超过 10 张 PDF 图纸；暂不支持 A1、A0 大尺寸图纸',
+    'folder.browse': '选择文件夹',
+    'folder.placeholder': '输入或粘贴图纸文件夹路径，例如 D:\\图纸\\项目A\\...  也可直接拖入 PDF 图纸',
+    'folder.upload': '上传 PDF 图纸文件',
+    'audit.standard': '审核标准',
+    'recursive': '递归子目录',
+    'input.hint': '审核报告将自动保存到图纸所在文件夹（.md + .json），批量审核完成后生成汇总报告',
+    'footer.credit': '@AiworkLab 出品',
+    'drop.title': '松开以上传 PDF 图纸',
+    'drop.sub': '支持一次拖入多张图纸',
+    'drawer.title': '图纸详情',
+    'drawer.loading': '加载图纸预览...',
+    'drawer.noPreview': '暂无预览图',
+    'modal.checklistTitle': '选择审核检查项',
+    'modal.cancel': '取消',
+    'modal.apply': '应用',
+    'api.title': '⚙️ AI API 配置',
+    'api.security': '🔒 安全说明<br>API Key 仅保存在本地 data/ai_config.json，不会上传到任何服务器，也不会提交到 GitHub。',
+    'api.model': 'Model 名称',
+    'api.example': 'Agnes 免费 API 示例：',
+    'api.save': '保存配置',
+    'api.configured': '当前已配置：{0}（保存新 Key 将覆盖）',
+    'api.notConfigured': '当前未配置 API Key，将以演示模式运行',
+    'api.fillBaseUrl': '请填写 Base URL',
+    'api.fillKey': '请填写 API Key',
+    'api.fillModel': '请填写 Model 名称',
+    'api.saveFailed': '保存失败',
+    'api.saved': '✅ AI 配置已保存，已切换为正式模式',
+    'toast.demoMode': '演示模式：AI审核返回模拟数据，可完整测试流程。配置 API Key 后切换正式模式。',
+    'toast.connFail': '无法连接到服务器，请确认服务已启动',
+    'toast.batchDone': '批量审核完成！',
+    'toast.auditRunning': '当前有审核任务正在进行',
+    'toast.demoRunning': '当前为演示模式，AI审核将返回模拟数据。配置 API Key 后切换为正式模式。',
+    'toast.selectPdf': '请选择 PDF 图纸文件',
+    'toast.folderPath': '请在输入框中粘贴图纸文件夹的完整路径',
+    'toast.noSummary': '汇总报告尚未生成',
+    'toast.reportSaved': '报告已保存到：{0}',
+    'toast.checklistSelected': '已选择 {0} 项检查',
+    'toast.taskCreateFail': '创建任务失败',
+    'toast.uploadFail': '上传失败',
+    'toast.taskDetailFail': '加载任务详情失败',
+    'progress.auditing': '📁 正在审核：{0}',
+    'progress.preparing': '准备中...',
+    'progress.queued': '排队中...',
+    'progress.total': '总图纸：',
+    'progress.done': '已完成：',
+    'progress.fail': '失败：',
+    'progress.issues': '问题数：',
+    'progress.passed': '通过',
+    'progress.failed': '不通过',
+    'progress.auditingN': '审核中 {0}/{1}',
+    'progress.failErr': '失败: {0}',
+    'progress.unknownErr': '未知错误',
+    'chat.me': '我',
+    'chat.auditFolder': '审核文件夹：{0}',
+    'chat.scanning': '收到，正在扫描文件夹中的 PDF 图纸...',
+    'chat.found': '找到 <strong>{0}</strong> 张 PDF 图纸，开始逐张审核...',
+    'chat.uploaded': '上传 {0} 张 PDF 图纸',
+    'chat.uploading': '收到，正在上传图纸并准备审核...',
+    'chat.auditingTitle': '审核中：{0}',
+    'dashboard.title': '📊 审核汇总：{0}',
+    'dashboard.subtitle': '任务ID: {0} | 共 {1} 张图纸 | {2}',
+    'dashboard.passRate': '审核通过率',
+    'dashboard.completed': '{0} 张完成',
+    'dashboard.failed': '{0} 张失败',
+    'dashboard.block': '🔴 阻断级问题',
+    'dashboard.blockSub': '必须修改后才能通过',
+    'dashboard.warning': '🟡 警告级问题',
+    'dashboard.warningSub': '建议修改，影响质量',
+    'dashboard.info': '🔵 建议级问题',
+    'dashboard.infoSub': '可选优化项',
+    'dashboard.thName': '图纸名称',
+    'dashboard.thResult': '结论',
+    'dashboard.thBlock': '阻断',
+    'dashboard.thWarning': '警告',
+    'dashboard.thInfo': '建议',
+    'dashboard.thReport': '报告',
+    'dashboard.pass': '通过',
+    'dashboard.fail': '不通过',
+    'dashboard.detail': '查看详情 →',
+    'detail.title': '🏷️ 标题栏信息（规则提取）',
+    'detail.issues': '⚠️ 发现问题（{0}）',
+    'detail.humanReview': '需人工复核',
+    'detail.unnamed': '未命名问题',
+    'detail.evidence': '🔎 证据：',
+    'detail.calc': '🧮 计算：',
+    'detail.risk': '⚠️ 工程风险：',
+    'detail.result': '✅ 审核结果',
+    'detail.noIssues': '未发现问题，图纸审核通过！',
+    'detail.checklist': '📋 各检查项结果',
+    'detail.issueCount': '{0} 个问题',
+    'detail.reportFiles': '📁 报告文件',
+    'detail.ruleDetected': '规则检测',
+    'detail.aiDetected': 'AI检测',
+    'tb.drawingNumber': '图号',
+    'tb.revision': '版本',
+    'tb.title': '图名',
+    'tb.material': '材料',
+    'tb.scale': '比例',
+    'tb.date': '日期',
+    'sev.block': '阻断',
+    'sev.warning': '警告',
+    'sev.info': '建议',
+    'checklist.ruleLib': '📐 Baseline 规则库 V1.0',
+    'checklist.standard': '审核标准：{0}',
+    'checklist.enterprise': '企业',
+    'checklist.rules': '条规则',
+    'checklist.overrides': '项企业覆盖生效',
+    'checklist.enabled': '{0}项检查 · {1}条规则已启用',
+    'checklist.enabledSimple': '{0}项检查已启用',
+    'checklist.standardBadge': '审核标准 · {0}',
+    'history.pass': '通过',
+    'history.fail': '不通过',
+    'history.running': '进行中',
+    'history.unnamed': '未命名',
+    'history.files': '{0}张',
+    'ctx.confirm': '确定删除这条审核记录吗？\n（仅删除历史记录，不影响图纸文件夹中的报告文件）',
+    'ctx.deleteFail': '删除失败，请重试',
+    'ctx.deleteErr': '删除失败：{0}',
+    'lang.switch': '切换界面语言',
+    'lang.zh': '中文',
+    'lang.en': 'English',
+    'feature.back': '返回审核',
+    'feature.chunking.title': '智能分块审核',
+    'feature.chunking.subtitle': '针对工程图纸大尺寸、高密度标注的特点，采用多尺度分块策略，解决视觉大模型在工程图纸上的分辨率与幻觉瓶颈。',
+    'feature.chunking.s1.title': '分块策略',
+    'feature.chunking.s1.step1.title': '全局缩略图（150 DPI）',
+    'feature.chunking.s1.step1.desc': '审查总体布局、视图完整性、图框位置、各视图比例关系',
+    'feature.chunking.s1.step2.title': '标题栏高保真切片（400 DPI）',
+    'feature.chunking.s1.step2.desc': '截取右下角标题栏区域，高保真识别图名、图号、版本、签名、材料等文字信息',
+    'feature.chunking.s1.step3.title': '高密度标注区分块（300 DPI）',
+    'feature.chunking.s1.step3.desc': '将页面切分为 2~4 个局部高清区域，专注尺寸标注、公差、工艺特征等细节审查',
+    'feature.chunking.s2.title': '技术特点',
+    'feature.chunking.s2.tag1': '多尺度渲染',
+    'feature.chunking.s2.tag2': '自动空白过滤',
+    'feature.chunking.s2.tag3': '标题栏智能定位',
+    'feature.chunking.s2.tag4': '切片并行审核',
+    'feature.chunking.s2.tag5': '结果自动去重合并',
+    'feature.chunking.s3.title': '适用范围',
+    'feature.chunking.s3.desc': 'A4、A3、A2 尺寸图纸效果最佳。A1、A0 大尺寸图纸因标注密度过高，暂不支持。',
+    'feature.rulecheck.title': '规则前置检查',
+    'feature.rulecheck.subtitle': '利用 PDF 矢量文本层，通过正则表达式和规则引擎零误差校验标题栏信息，减轻 AI 视觉模型压力，提高文字类信息准确率。',
+    'feature.rulecheck.s1.title': '检查流程',
+    'feature.rulecheck.s1.step1.title': '矢量文本提取',
+    'feature.rulecheck.s1.step1.desc': '通过 PyMuPDF 提取 PDF 中的矢量文本层（扫描件/图片PDF无此层）',
+    'feature.rulecheck.s1.step2.title': '标题栏信息解析',
+    'feature.rulecheck.s1.step2.desc': '用正则表达式提取图号、版本、材料、比例、日期、签名等关键字段',
+    'feature.rulecheck.s1.step3.title': '规则校验',
+    'feature.rulecheck.s1.step3.desc': '校验图号格式、版本合规性、签名栏是否为空、未注公差说明是否存在等',
+    'feature.rulecheck.s1.step4.title': '结果传递给 AI',
+    'feature.rulecheck.s1.step4.desc': '已提取的标题栏信息作为上下文注入 AI 审核 prompt，避免 AI 重复识别或误读',
+    'feature.rulecheck.s2.title': '内置检查项',
+    'feature.rulecheck.s2.tag1': '图号格式校验',
+    'feature.rulecheck.s2.tag2': '版本号检测',
+    'feature.rulecheck.s2.tag3': '材料牌号识别',
+    'feature.rulecheck.s2.tag4': '比例标注检测',
+    'feature.rulecheck.s2.tag5': '签名栏空值检测',
+    'feature.rulecheck.s2.tag6': '出图日期检测',
+    'feature.rulecheck.s2.tag7': '未注公差说明',
+    'feature.rulecheck.s2.tag8': '占位符文字检测',
+    'feature.rulecheck.s3.title': '自定义规则',
+    'feature.rulecheck.s3.desc': '在 custom_rules.py 的 CUSTOM_RULE_CHECKS 中可添加自定义正则规则，支持 must_exist（必须存在）和 must_not_exist（禁止存在）两种模式。',
+    'feature.dashboard.title': '汇总看板',
+    'feature.dashboard.subtitle': '批量审核完成后，以可视化看板展示整批图纸的健康度、缺陷统计和通过率，支持逐张下钻查看详细问题。',
+    'feature.dashboard.s1.title': '看板内容',
+    'feature.dashboard.s1.step1.title': '健康度环',
+    'feature.dashboard.s1.step1.desc': '整批图纸通过率可视化，绿色≥80%、橙色≥50%、红色<50%',
+    'feature.dashboard.s1.step2.title': '缺陷统计卡片',
+    'feature.dashboard.s1.step2.desc': '阻断级（Block）、警告级（Warning）、建议级（Info）三级问题数量统计',
+    'feature.dashboard.s1.step3.title': '逐张结果表',
+    'feature.dashboard.s1.step3.desc': '每张图纸的通过状态、各级问题数量，点击行展开双栏详情面板',
+    'feature.dashboard.s1.step4.title': '双栏详情面板',
+    'feature.dashboard.s1.step4.desc': '左侧原图预览 + 右侧问题清单（含位置描述和修改建议），问题按严重等级排序',
+    'feature.dashboard.s2.title': '报告产物',
+    'feature.dashboard.s2.tag1': '单张 Markdown 报告',
+    'feature.dashboard.s2.tag2': '单张 JSON 数据',
+    'feature.dashboard.s2.tag3': '批量汇总报告',
+    'feature.dashboard.s2.tag4': '审核历史 SQLite',
+    'feature.dashboard.s3.title': '数据对接',
+    'feature.dashboard.s3.desc': '每张图纸生成的 _audit_result.json 为结构化数据，可方便地对接 ERP/PLM 系统或导出 Excel 缺陷清单。',
+  },
+  en: {
+    'sidebar.title': '2D Drawing Audit Expert',
+    'sidebar.newTask': 'New Audit Task',
+    'nav.chunking': 'Smart Chunking',
+    'nav.rulecheck': 'Rule Pre-check',
+    'nav.dashboard': 'Dashboard',
+    'sidebar.recent': 'Recent Audits',
+    'history.empty': 'No history yet',
+    'ws.connecting': 'Connecting...',
+    'ws.connected': 'Connected',
+    'ws.reconnecting': 'Disconnected, reconnecting...',
+    'demoMode': 'Demo Mode',
+    'config.title': 'Configure AI API Key',
+    'config.btn': 'Settings',
+    'ctx.title': 'Record',
+    'ctx.delete': '🗑️ Delete record',
+    'mainHeader.default': '2D Drawing Audit',
+    'export.report': 'Export Report',
+    'empty.title': 'Which drawings to audit today?',
+    'empty.desc': 'Select a folder containing PDF 2D drawings. AI will audit each one professionally,<br>give 1-to-1 suggestions and save them to the folder.',
+    'empty.limit': '⚠️ Max 10 PDFs per audit; A1 / A0 large sheets not supported yet',
+    'folder.browse': 'Choose folder',
+    'folder.placeholder': 'Enter or paste the drawing folder path, e.g. D:\\Drawings\\ProjectA\\...  You can also drop PDF files here',
+    'folder.upload': 'Upload PDF drawing files',
+    'audit.standard': 'Audit Standard',
+    'recursive': 'Include Subfolders',
+    'input.hint': 'Reports are auto-saved next to the drawings (.md + .json). A summary report is generated after the batch finishes',
+    'footer.credit': 'Made by @AiworkLab',
+    'drop.title': 'Release to upload PDF drawings',
+    'drop.sub': 'You can drop multiple drawings at once',
+    'drawer.title': 'Drawing Details',
+    'drawer.loading': 'Loading preview...',
+    'drawer.noPreview': 'No preview available',
+    'modal.checklistTitle': 'Select Audit Items',
+    'modal.cancel': 'Cancel',
+    'modal.apply': 'Apply',
+    'api.title': '⚙️ AI API Settings',
+    'api.security': '🔒 Security Note<br>API Key is stored locally in data/ai_config.json only. It is never uploaded to any server or committed to GitHub.',
+    'api.model': 'Model Name',
+    'api.example': 'Agnes free API example:',
+    'api.save': 'Save',
+    'api.configured': 'Currently configured: {0} (saving a new key will overwrite it)',
+    'api.notConfigured': 'No API Key configured. Will run in demo mode',
+    'api.fillBaseUrl': 'Please enter Base URL',
+    'api.fillKey': 'Please enter API Key',
+    'api.fillModel': 'Please enter Model name',
+    'api.saveFailed': 'Save failed',
+    'api.saved': '✅ AI settings saved. Switched to production mode',
+    'toast.demoMode': 'Demo mode: AI audit returns simulated data for full flow testing. Configure an API Key to switch to production mode.',
+    'toast.connFail': 'Cannot connect to the server. Please make sure the service is running',
+    'toast.batchDone': 'Batch audit completed!',
+    'toast.auditRunning': 'An audit task is already running',
+    'toast.demoRunning': 'Demo mode: AI audit returns simulated data. Configure an API Key to switch to production mode.',
+    'toast.selectPdf': 'Please select PDF drawing files',
+    'toast.folderPath': 'Please paste the full drawing folder path into the input box',
+    'toast.noSummary': 'Summary report not generated yet',
+    'toast.reportSaved': 'Report saved to: {0}',
+    'toast.checklistSelected': '{0} items selected',
+    'toast.taskCreateFail': 'Failed to create task',
+    'toast.uploadFail': 'Upload failed',
+    'toast.taskDetailFail': 'Failed to load task details',
+    'progress.auditing': '📁 Auditing: {0}',
+    'progress.preparing': 'Preparing...',
+    'progress.queued': 'Queued...',
+    'progress.total': 'Total: ',
+    'progress.done': 'Done: ',
+    'progress.fail': 'Failed: ',
+    'progress.issues': 'Issues: ',
+    'progress.passed': 'Passed',
+    'progress.failed': 'Failed',
+    'progress.auditingN': 'Auditing {0}/{1}',
+    'progress.failErr': 'Failed: {0}',
+    'progress.unknownErr': 'Unknown error',
+    'chat.me': 'Me',
+    'chat.auditFolder': 'Audit folder: {0}',
+    'chat.scanning': 'Got it, scanning the folder for PDF drawings...',
+    'chat.found': 'Found <strong>{0}</strong> PDF drawings. Starting audit one by one...',
+    'chat.uploaded': 'Uploaded {0} PDF drawings',
+    'chat.uploading': 'Got it, uploading drawings and preparing the audit...',
+    'chat.auditingTitle': 'Auditing: {0}',
+    'dashboard.title': '📊 Audit Summary: {0}',
+    'dashboard.subtitle': 'Task ID: {0} | {1} drawings total | {2}',
+    'dashboard.passRate': 'Pass Rate',
+    'dashboard.completed': '{0} done',
+    'dashboard.failed': '{0} failed',
+    'dashboard.block': '🔴 Blockers',
+    'dashboard.blockSub': 'Must fix before approval',
+    'dashboard.warning': '🟡 Warnings',
+    'dashboard.warningSub': 'Recommended to fix, affects quality',
+    'dashboard.info': '🔵 Suggestions',
+    'dashboard.infoSub': 'Optional improvements',
+    'dashboard.thName': 'Drawing Name',
+    'dashboard.thResult': 'Result',
+    'dashboard.thBlock': 'Block',
+    'dashboard.thWarning': 'Warn',
+    'dashboard.thInfo': 'Info',
+    'dashboard.thReport': 'Report',
+    'dashboard.pass': 'Pass',
+    'dashboard.fail': 'Fail',
+    'dashboard.detail': 'View details →',
+    'detail.title': '🏷️ Title Block (rule-extracted)',
+    'detail.issues': '⚠️ Issues Found ({0})',
+    'detail.humanReview': 'Needs manual review',
+    'detail.unnamed': 'Unnamed issue',
+    'detail.evidence': '🔎 Evidence: ',
+    'detail.calc': '🧮 Calculation: ',
+    'detail.risk': '⚠️ Engineering risk: ',
+    'detail.result': '✅ Audit Result',
+    'detail.noIssues': 'No issues found. Drawing passed!',
+    'detail.checklist': '📋 Checklist Results',
+    'detail.issueCount': '{0} issue(s)',
+    'detail.reportFiles': '📁 Report Files',
+    'detail.ruleDetected': 'Rule check',
+    'detail.aiDetected': 'AI check',
+    'tb.drawingNumber': 'Drawing No.',
+    'tb.revision': 'Rev',
+    'tb.title': 'Title',
+    'tb.material': 'Material',
+    'tb.scale': 'Scale',
+    'tb.date': 'Date',
+    'sev.block': 'Block',
+    'sev.warning': 'Warning',
+    'sev.info': 'Info',
+    'checklist.ruleLib': '📐 Baseline Rule Library V1.0',
+    'checklist.standard': 'Audit standard: {0}',
+    'checklist.enterprise': 'Enterprise',
+    'checklist.rules': 'rules',
+    'checklist.overrides': 'enterprise override(s) active',
+    'checklist.enabled': '{0} items · {1} rules enabled',
+    'checklist.enabledSimple': '{0} items enabled',
+    'checklist.standardBadge': 'Audit standard · {0}',
+    'history.pass': 'Pass',
+    'history.fail': 'Fail',
+    'history.running': 'Running',
+    'history.unnamed': 'Unnamed',
+    'history.files': '{0}',
+    'ctx.confirm': 'Delete this audit record?\n(Only the history record is removed. Report files in the drawing folder are kept)',
+    'ctx.deleteFail': 'Delete failed, please retry',
+    'ctx.deleteErr': 'Delete failed: {0}',
+    'lang.switch': 'Switch UI language',
+    'lang.zh': '中文',
+    'lang.en': 'English',
+    'feature.back': 'Back to Audit',
+    'feature.chunking.title': 'Smart Chunking Audit',
+    'feature.chunking.subtitle': 'Engineering drawings are large with dense annotations. A multi-scale chunking strategy overcomes the resolution and hallucination limits of vision LLMs.',
+    'feature.chunking.s1.title': 'Chunking Strategy',
+    'feature.chunking.s1.step1.title': 'Global thumbnail (150 DPI)',
+    'feature.chunking.s1.step1.desc': 'Reviews overall layout, view completeness, frame position and view scale relationships',
+    'feature.chunking.s1.step2.title': 'Title block crop (400 DPI)',
+    'feature.chunking.s1.step2.desc': 'Crops the bottom-right title block to accurately read title, drawing number, revision, signatures and material',
+    'feature.chunking.s1.step3.title': 'Dense annotation zones (300 DPI)',
+    'feature.chunking.s1.step3.desc': 'Splits the page into 2-4 high-res zones to review dimension callouts, tolerances and process features',
+    'feature.chunking.s2.title': 'Key Features',
+    'feature.chunking.s2.tag1': 'Multi-scale rendering',
+    'feature.chunking.s2.tag2': 'Auto blank filtering',
+    'feature.chunking.s2.tag3': 'Smart title-block locating',
+    'feature.chunking.s2.tag4': 'Parallel chunk review',
+    'feature.chunking.s2.tag5': 'Dedup & merge results',
+    'feature.chunking.s3.title': 'Scope',
+    'feature.chunking.s3.desc': 'Best results on A4, A3 and A2 sheets. A1 / A0 are not supported yet due to extreme annotation density.',
+    'feature.rulecheck.title': 'Rule Pre-check',
+    'feature.rulecheck.subtitle': 'Uses the PDF vector text layer with regex and a rule engine to verify title block info with zero error, reducing vision model load and improving text accuracy.',
+    'feature.rulecheck.s1.title': 'Check Flow',
+    'feature.rulecheck.s1.step1.title': 'Vector text extraction',
+    'feature.rulecheck.s1.step1.desc': 'Extracts the vector text layer with PyMuPDF (absent in scanned / image PDFs)',
+    'feature.rulecheck.s1.step2.title': 'Title block parsing',
+    'feature.rulecheck.s1.step2.desc': 'Extracts drawing number, revision, material, scale, date and signatures with regex',
+    'feature.rulecheck.s1.step3.title': 'Rule validation',
+    'feature.rulecheck.s1.step3.desc': 'Checks drawing number format, revision compliance, empty signature fields and missing general tolerance notes',
+    'feature.rulecheck.s1.step4.title': 'Pass results to AI',
+    'feature.rulecheck.s1.step4.desc': 'Extracted title block info is injected into the AI prompt to avoid re-reading or misreading',
+    'feature.rulecheck.s2.title': 'Built-in Checks',
+    'feature.rulecheck.s2.tag1': 'Drawing number format',
+    'feature.rulecheck.s2.tag2': 'Revision check',
+    'feature.rulecheck.s2.tag3': 'Material grade',
+    'feature.rulecheck.s2.tag4': 'Scale label',
+    'feature.rulecheck.s2.tag5': 'Empty signature',
+    'feature.rulecheck.s2.tag6': 'Issue date',
+    'feature.rulecheck.s2.tag7': 'General tolerance note',
+    'feature.rulecheck.s2.tag8': 'Placeholder text',
+    'feature.rulecheck.s3.title': 'Custom Rules',
+    'feature.rulecheck.s3.desc': 'Add custom regex rules in CUSTOM_RULE_CHECKS in custom_rules.py, supporting must_exist and must_not_exist modes.',
+    'feature.dashboard.title': 'Summary Dashboard',
+    'feature.dashboard.subtitle': 'After a batch, a visual dashboard shows overall health, defect stats and pass rate, with per-file drill-down.',
+    'feature.dashboard.s1.title': 'Dashboard Contents',
+    'feature.dashboard.s1.step1.title': 'Health ring',
+    'feature.dashboard.s1.step1.desc': 'Pass-rate visualization: green ≥80%, orange ≥50%, red <50%',
+    'feature.dashboard.s1.step2.title': 'Defect stat cards',
+    'feature.dashboard.s1.step2.desc': 'Counts of Block, Warning and Info level issues',
+    'feature.dashboard.s1.step3.title': 'Per-file results table',
+    'feature.dashboard.s1.step3.desc': 'Pass status and issue counts per file; click a row for the two-pane detail',
+    'feature.dashboard.s1.step4.title': 'Two-pane detail panel',
+    'feature.dashboard.s1.step4.desc': 'Left: original preview; right: issue list with location and suggestions, sorted by severity',
+    'feature.dashboard.s2.title': 'Report Outputs',
+    'feature.dashboard.s2.tag1': 'Per-file Markdown report',
+    'feature.dashboard.s2.tag2': 'Per-file JSON data',
+    'feature.dashboard.s2.tag3': 'Batch summary report',
+    'feature.dashboard.s2.tag4': 'Audit history SQLite',
+    'feature.dashboard.s3.title': 'Data Integration',
+    'feature.dashboard.s3.desc': 'Each drawing produces a structured _audit_result.json, easy to integrate with ERP/PLM or export as an Excel defect list.',
+  }
+};
+
+let currentLang = localStorage.getItem('audit_lang') || 'zh';
+function t(key, ...args) {
+  let s = (I18N[currentLang] && I18N[currentLang][key]) || (I18N.zh[key]) || key;
+  args.forEach((a, i) => { s = s.replace(new RegExp('\\{' + i + '\\}', 'g'), a); });
+  return s;
+}
+function applyLanguage() {
+  // 静态元素文本
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    const v = (I18N[currentLang] && I18N[currentLang][k]) || I18N.zh[k];
+    if (v !== undefined) el.textContent = v;
+  });
+  // 含 HTML 的文本
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const k = el.getAttribute('data-i18n-html');
+    const v = (I18N[currentLang] && I18N[currentLang][k]) || I18N.zh[k];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  // placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const k = el.getAttribute('data-i18n-placeholder');
+    const v = (I18N[currentLang] && I18N[currentLang][k]) || I18N.zh[k];
+    if (v !== undefined) el.placeholder = v;
+  });
+  // title 属性
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const k = el.getAttribute('data-i18n-title');
+    const v = (I18N[currentLang] && I18N[currentLang][k]) || I18N.zh[k];
+    if (v !== undefined) el.setAttribute('title', v);
+  });
+  // 语言切换按钮文字
+  const langBtn = document.getElementById('langToggle');
+  if (langBtn) langBtn.textContent = currentLang === 'zh' ? 'EN' : '中文';
+  document.title = currentLang === 'zh' ? 'Drawing Audit Expert | 2D图纸审核高手' : '2D Drawing Audit Expert | 2D Drawing Auditor';
+  document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+}
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('audit_lang', currentLang);
+  applyLanguage();
+  // 重新渲染当前视图中的动态内容
+  if (state.currentTask) loadTaskDetail(state.currentTaskId);
+  loadHistory();
+  renderChecklistModal();
+  updateChecklistCount();
+  const fp = document.getElementById('featurePage');
+  if (fp && fp.classList.contains('active')) showFeaturePage(state.currentFeature);
+  const drawer = document.getElementById('drawer');
+  if (drawer && drawer.style.display === 'block' && state.currentTaskId) {
+    const fileIndex = state.currentDrawerFileIndex;
+    if (fileIndex !== undefined) openFileDetail(state.currentTaskId, fileIndex);
+  }
+  // API 配置弹窗的已配置提示联动
+  const apiModal = document.getElementById('apiConfigModal');
+  if (apiModal && apiModal.classList.contains('open')) {
+    const masked = (state.config && state.config.api_key_masked) || '';
+    document.getElementById('apiKeyCurrent').innerHTML = masked
+      ? t('api.configured', `<code>${masked}</code>`)
+      : t('api.notConfigured');
+  }
+  if (state.config && state.config.demo_mode) {
+    // 演示模式提示在切换后保持简单
+  }
+}
+
 // ========== 全局状态 ==========
 const state = {
   currentTaskId: null,
   currentTask: null,
+  currentFeature: null,
+  currentDrawerFileIndex: undefined,
   ws: null,
   config: null,
   ruleCatalog: null, // /api/rules 返回的规则库
@@ -566,11 +1066,13 @@ async function init() {
     // 演示模式标识
     if (state.config.demo_mode) {
       document.getElementById('demoModeBadge').style.display = 'inline-block';
-      setTimeout(() => showToast('演示模式：AI审核返回模拟数据，可完整测试流程。配置 API Key 后切换正式模式。', 'info'), 800);
+      setTimeout(() => showToast(t('toast.demoMode'), 'info'), 800);
     }
   } catch (e) {
-    showToast('无法连接到服务器，请确认服务已启动', 'error');
+    showToast(t('toast.connFail'), 'error');
   }
+
+  applyLanguage();
 
   // 输入框监听
   document.getElementById('folderInput').addEventListener('input', function() {
@@ -585,12 +1087,12 @@ function connectWebSocket() {
 
   state.ws.onopen = () => {
     document.getElementById('wsStatusDot').style.background = 'var(--success)';
-    document.getElementById('wsStatusText').textContent = '已连接';
+    document.getElementById('wsStatusText').textContent = t('ws.connected');
   };
 
   state.ws.onclose = () => {
     document.getElementById('wsStatusDot').style.background = 'var(--danger)';
-    document.getElementById('wsStatusText').textContent = '已断开，重连中...';
+    document.getElementById('wsStatusText').textContent = t('ws.reconnecting');
     setTimeout(connectWebSocket, 3000);
   };
 
@@ -607,7 +1109,7 @@ function handleProgress(msg) {
   const { stage, message, data } = msg;
 
   if (stage === 'file_started') {
-    addFileProgressItem(data.file_name, '排队中...');
+    addFileProgressItem(data.file_name, t('progress.queued'));
   } else if (stage === 'prechecking' || stage === 'rendering' || stage === 'ai_auditing' || stage === 'auditing' || stage === 'reporting') {
     updateFileProgressItem(data.file_name, message.replace(/\[.*?\]\s*/, ''));
   } else if (stage === 'file_completed') {
@@ -624,7 +1126,7 @@ function handleProgress(msg) {
       failFileProgressItem(data.file_name, data.error);
     }
   } else if (stage === 'batch_completed') {
-    showToast('批量审核完成！', 'success');
+    showToast(t('toast.batchDone'), 'success');
     setTimeout(() => {
       loadTaskDetail(state.currentTaskId);
     }, 500);
@@ -637,7 +1139,7 @@ function addChatMessage(role, content, isHTML = false) {
   const msg = document.createElement('div');
   msg.className = `chat-message ${role}`;
 
-  const avatar = role === 'user' ? '我' : 'Check';
+  const avatar = role === 'user' ? t('chat.me') : 'Check';
   const avatarClass = role === 'user' ? 'avatar-user' : 'avatar-ai';
 
   msg.innerHTML = `
@@ -659,15 +1161,15 @@ function addProgressCard(folderName, totalFiles) {
   card.id = 'progressCard';
   card.innerHTML = `
     <div class="progress-header">
-      <div class="progress-title">📁 正在审核：${escapeHtml(folderName)}</div>
-      <div class="progress-status" id="progressStatus">准备中...</div>
+      <div class="progress-title">${t('progress.auditing', escapeHtml(folderName))}</div>
+      <div class="progress-status" id="progressStatus">${t('progress.preparing')}</div>
     </div>
     <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
     <div class="progress-stats">
-      <div class="progress-stat">总图纸：<strong id="statTotal">${totalFiles}</strong></div>
-      <div class="progress-stat">已完成：<strong id="statDone">0</strong></div>
-      <div class="progress-stat">失败：<strong id="statFail" style="color:var(--danger)">0</strong></div>
-      <div class="progress-stat">问题数：<strong id="statIssues">0</strong></div>
+      <div class="progress-stat">${t('progress.total')}<strong id="statTotal">${totalFiles}</strong></div>
+      <div class="progress-stat">${t('progress.done')}<strong id="statDone">0</strong></div>
+      <div class="progress-stat">${t('progress.fail')}<strong id="statFail" style="color:var(--danger)">0</strong></div>
+      <div class="progress-stat">${t('progress.issues')}<strong id="statIssues">0</strong></div>
     </div>
     <div class="file-progress-list" id="fileProgressList"></div>
   `;
@@ -703,7 +1205,7 @@ function completeFileProgressItem(fileName, passed) {
   const item = document.getElementById(id);
   if (item) {
     item.querySelector('.file-spinner').outerHTML = `<span style="font-size:14px;">${passed ? '✅' : '❌'}</span>`;
-    item.querySelector('.file-progress-stage').textContent = passed ? '通过' : '不通过';
+    item.querySelector('.file-progress-stage').textContent = passed ? t('progress.passed') : t('progress.failed');
   }
   // 更新统计
   const doneEl = document.getElementById('statDone');
@@ -712,7 +1214,7 @@ function completeFileProgressItem(fileName, passed) {
     doneEl.textContent = done;
     const total = parseInt(document.getElementById('statTotal').textContent);
     document.getElementById('progressBar').style.width = `${(done/total)*100}%`;
-    document.getElementById('progressStatus').textContent = `审核中 ${done}/${total}`;
+    document.getElementById('progressStatus').textContent = t('progress.auditingN', done, total);
   }
 }
 
@@ -721,7 +1223,7 @@ function failFileProgressItem(fileName, error) {
   const item = document.getElementById(id);
   if (item) {
     item.querySelector('.file-spinner').outerHTML = '<span style="font-size:14px;">⚠️</span>';
-    item.querySelector('.file-progress-stage').textContent = `失败: ${error?.substring(0, 30) || '未知错误'}`;
+    item.querySelector('.file-progress-stage').textContent = t('progress.failErr', (error?.substring(0, 30) || t('progress.unknownErr')));
   }
   const failEl = document.getElementById('statFail');
   if (failEl) failEl.textContent = parseInt(failEl.textContent) + 1;
@@ -749,13 +1251,13 @@ async function startAudit() {
   const folderPath = extractFolderPath(rawInput);
   if (!folderPath) return;
   if (state.isAuditing) {
-    showToast('当前有审核任务正在进行', 'info');
+    showToast(t('toast.auditRunning'), 'info');
     return;
   }
 
   // 检查 AI 配置（演示模式不阻止，仅提示）
   if (!state.config.ai_configured) {
-    showToast('当前为演示模式，AI审核将返回模拟数据。配置 API Key 后切换为正式模式。', 'info');
+    showToast(t('toast.demoRunning'), 'info');
   }
 
   state.isAuditing = true;
@@ -767,8 +1269,8 @@ async function startAudit() {
   document.getElementById('chatContainer').style.display = 'block';
   document.getElementById('chatContainer').innerHTML = '';
 
-  addChatMessage('user', `审核文件夹：${folderPath}`);
-  addChatMessage('ai', '收到，正在扫描文件夹中的 PDF 图纸...');
+  addChatMessage('user', t('chat.auditFolder', folderPath));
+  addChatMessage('ai', t('chat.scanning'));
 
   try {
     // 创建任务
@@ -784,7 +1286,7 @@ async function startAudit() {
 
     if (!createResp.ok) {
       const err = await createResp.json();
-      throw new Error(err.detail || '创建任务失败');
+      throw new Error(err.detail || t('toast.taskCreateFail'));
     }
 
     const taskData = await createResp.json();
@@ -804,14 +1306,14 @@ async function beginAuditTask(taskData) {
   state.currentTask = taskData;
   state.fileResults = {};
 
-  addChatMessage('ai', `找到 <strong>${taskData.total_files}</strong> 张 PDF 图纸，开始逐张审核...`, true);
+  addChatMessage('ai', t('chat.found', taskData.total_files), true);
   addProgressCard(taskData.folder_name, taskData.total_files);
 
   // 启动审核
   await fetch(`/api/tasks/${taskData.task_id}/start`, { method: 'POST' });
 
   // 更新标题
-  document.getElementById('mainHeaderTitle').textContent = `审核中：${taskData.folder_name}`;
+  document.getElementById('mainHeaderTitle').textContent = t('chat.auditingTitle', taskData.folder_name);
 }
 
 // ========== 文件上传 / 拖拽 ==========
@@ -833,16 +1335,16 @@ function handleFileInput(e) {
 async function uploadAndAudit(files) {
   const pdfFiles = files.filter(f => f.name && f.name.toLowerCase().endsWith('.pdf'));
   if (!pdfFiles.length) {
-    showToast('请选择 PDF 图纸文件', 'error');
+    showToast(t('toast.selectPdf'), 'error');
     return;
   }
   if (state.isAuditing) {
-    showToast('当前有审核任务正在进行', 'info');
+    showToast(t('toast.auditRunning'), 'info');
     return;
   }
 
   if (!state.config.ai_configured) {
-    showToast('当前为演示模式，AI审核将返回模拟数据。配置 API Key 后切换为正式模式。', 'info');
+    showToast(t('toast.demoRunning'), 'info');
   }
 
   state.isAuditing = true;
@@ -854,8 +1356,8 @@ async function uploadAndAudit(files) {
   document.getElementById('chatContainer').style.display = 'block';
   document.getElementById('chatContainer').innerHTML = '';
 
-  addChatMessage('user', `上传 ${pdfFiles.length} 张 PDF 图纸`);
-  addChatMessage('ai', '收到，正在上传图纸并准备审核...');
+  addChatMessage('user', t('chat.uploaded', pdfFiles.length));
+  addChatMessage('ai', t('chat.uploading'));
 
   try {
     const formData = new FormData();
@@ -867,7 +1369,7 @@ async function uploadAndAudit(files) {
     const resp = await fetch('/api/upload', { method: 'POST', body: formData });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.detail || '上传失败');
+      throw new Error(err.detail || t('toast.uploadFail'));
     }
     const taskData = await resp.json();
     await beginAuditTask(taskData);
@@ -917,7 +1419,7 @@ async function uploadAndAudit(files) {
 async function loadTaskDetail(taskId) {
   try {
     const resp = await fetch(`/api/tasks/${taskId}`);
-    if (!resp.ok) throw new Error('加载任务详情失败');
+    if (!resp.ok) throw new Error(t('toast.taskDetailFail'));
     const task = await resp.json();
     state.currentTask = task;
     state.currentTaskId = taskId;
@@ -938,7 +1440,7 @@ function renderDashboard(task) {
   const dash = document.getElementById('dashboard');
   dash.style.display = 'block';
   document.getElementById('exportBtn').style.display = 'flex';
-  document.getElementById('mainHeaderTitle').textContent = `审核结果：${task.folder_name}`;
+  document.getElementById('mainHeaderTitle').textContent = `${t('dashboard.title', task.folder_name)}`;
 
   const passRate = task.pass_rate || 0;
   const ringColor = passRate >= 80 ? 'var(--success)' : passRate >= 50 ? 'var(--warning)' : 'var(--danger)';
@@ -947,13 +1449,13 @@ function renderDashboard(task) {
 
   dash.innerHTML = `
     <div class="dashboard-header">
-      <div class="dashboard-title">📊 审核汇总：${escapeHtml(task.folder_name)}</div>
-      <div class="dashboard-subtitle">任务ID: ${task.task_id} | 共 ${task.total_files} 张图纸 | ${task.completed_at || ''}</div>
+      <div class="dashboard-title">${t('dashboard.title', escapeHtml(task.folder_name))}</div>
+      <div class="dashboard-subtitle">${t('dashboard.subtitle', task.task_id, task.total_files, task.completed_at || '')}</div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">审核通过率</div>
+        <div class="stat-label">${t('dashboard.passRate')}</div>
         <div class="health-ring-container">
           <div class="health-ring">
             <svg width="64" height="64">
@@ -964,25 +1466,25 @@ function renderDashboard(task) {
             <div class="health-ring-text" style="color:${ringColor}">${passRate.toFixed(0)}%</div>
           </div>
           <div>
-            <div style="font-size:11px; color:var(--text-tertiary);">${task.completed_files} 张完成</div>
-            <div style="font-size:11px; color:var(--text-tertiary);">${task.failed_files} 张失败</div>
+            <div style="font-size:11px; color:var(--text-tertiary);">${t('dashboard.completed', task.completed_files)}</div>
+            <div style="font-size:11px; color:var(--text-tertiary);">${t('dashboard.failed', task.failed_files)}</div>
           </div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">🔴 阻断级问题</div>
+        <div class="stat-label">${t('dashboard.block')}</div>
         <div class="stat-value danger">${task.block_count}</div>
-        <div class="stat-sub">必须修改后才能通过</div>
+        <div class="stat-sub">${t('dashboard.blockSub')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">🟡 警告级问题</div>
+        <div class="stat-label">${t('dashboard.warning')}</div>
         <div class="stat-value warning">${task.warning_count}</div>
-        <div class="stat-sub">建议修改，影响质量</div>
+        <div class="stat-sub">${t('dashboard.warningSub')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">🔵 建议级问题</div>
+        <div class="stat-label">${t('dashboard.info')}</div>
         <div class="stat-value info">${task.info_count}</div>
-        <div class="stat-sub">可选优化项</div>
+        <div class="stat-sub">${t('dashboard.infoSub')}</div>
       </div>
     </div>
 
@@ -990,12 +1492,12 @@ function renderDashboard(task) {
       <thead>
         <tr>
           <th style="width:40px;">#</th>
-          <th>图纸名称</th>
-          <th style="width:80px;">结论</th>
-          <th style="width:80px;">阻断</th>
-          <th style="width:80px;">警告</th>
-          <th style="width:80px;">建议</th>
-          <th style="width:100px;">报告</th>
+          <th>${t('dashboard.thName')}</th>
+          <th style="width:80px;">${t('dashboard.thResult')}</th>
+          <th style="width:80px;">${t('dashboard.thBlock')}</th>
+          <th style="width:80px;">${t('dashboard.thWarning')}</th>
+          <th style="width:80px;">${t('dashboard.thInfo')}</th>
+          <th style="width:100px;">${t('dashboard.thReport')}</th>
         </tr>
       </thead>
       <tbody>
@@ -1008,11 +1510,11 @@ function renderDashboard(task) {
               </span>
               ${escapeHtml(f.file_name)}
             </td>
-            <td>${f.passed ? '<span class="severity-tag sev-info">通过</span>' : '<span class="severity-tag sev-block">不通过</span>'}</td>
+            <td>${f.passed ? `<span class="severity-tag sev-info">${t('dashboard.pass')}</span>` : `<span class="severity-tag sev-block">${t('dashboard.fail')}</span>`}</td>
             <td>${f.block_count > 0 ? `<span class="severity-tag sev-block">${f.block_count}</span>` : '-'}</td>
             <td>${f.warning_count > 0 ? `<span class="severity-tag sev-warning">${f.warning_count}</span>` : '-'}</td>
             <td>${f.info_count > 0 ? `<span class="severity-tag sev-info">${f.info_count}</span>` : '-'}</td>
-            <td><span style="font-size:11px; color:var(--accent); cursor:pointer;">查看详情 →</span></td>
+            <td><span style="font-size:11px; color:var(--accent); cursor:pointer;">${t('dashboard.detail')}</span></td>
           </tr>
         `).join('')}
       </tbody>
@@ -1024,6 +1526,7 @@ function renderDashboard(task) {
 async function openFileDetail(index) {
   const task = state.currentTask;
   if (!task || !task.files[index]) return;
+  state.currentDrawerFileIndex = index;
 
   const file = task.files[index];
   document.getElementById('drawerTitle').textContent = file.file_name;
@@ -1040,7 +1543,7 @@ async function openFileDetail(index) {
   }
 
   // 缩略图缺失：异步拉取完整详情（含缩略图与更全字段）
-  left.innerHTML = '<div style="color:#666; font-size:13px;">加载图纸预览...</div>';
+  left.innerHTML = `<div style="color:#666; font-size:13px;">${t('drawer.loading')}</div>`;
   try {
     const resp = await fetch(`/api/tasks/${state.currentTaskId}/files/${index}`);
     if (resp.ok) {
@@ -1048,14 +1551,14 @@ async function openFileDetail(index) {
       if (detail.thumbnail) {
         left.innerHTML = `<img src="data:image/jpeg;base64,${detail.thumbnail}" alt="${escapeHtml(detail.file_name)}">`;
       } else {
-        left.innerHTML = '<div style="color:#666; font-size:13px;">暂无预览图</div>';
+        left.innerHTML = `<div style="color:#666; font-size:13px;">${t('drawer.noPreview')}</div>`;
       }
       // 用完整数据刷新右侧（含证据/计算等更全字段）
       renderDrawerRight(detail);
       return;
     }
   } catch (e) {}
-  left.innerHTML = '<div style="color:#666; font-size:13px;">暂无预览图</div>';
+  left.innerHTML = `<div style="color:#666; font-size:13px;">${t('drawer.noPreview')}</div>`;
 }
 
 function renderDrawerRight(file) {
@@ -1064,10 +1567,10 @@ function renderDrawerRight(file) {
   // 标题栏信息
   let tbHTML = '';
   if (file.title_block_info && Object.keys(file.title_block_info).length > 0) {
-    const labels = { drawing_number: '图号', revision: '版本', title: '图名', material: '材料', scale: '比例', date: '日期' };
+    const labels = { drawing_number: t('tb.drawingNumber'), revision: t('tb.revision'), title: t('tb.title'), material: t('tb.material'), scale: t('tb.scale'), date: t('tb.date') };
     tbHTML = `
       <div class="detail-section">
-        <div class="detail-section-title">🏷️ 标题栏信息（规则提取）</div>
+        <div class="detail-section-title">${t('detail.title')}</div>
         <div class="title-block-info">
           ${Object.entries(file.title_block_info).filter(([k,v]) => v && labels[k]).map(([k,v]) => `
             <div class="tb-item">
@@ -1095,21 +1598,21 @@ function renderDrawerRight(file) {
   if (allIssues.length > 0) {
     issuesHTML = `
       <div class="detail-section">
-        <div class="detail-section-title">⚠️ 发现问题（${allIssues.length}）</div>
+        <div class="detail-section-title">${t('detail.issues', allIssues.length)}</div>
         ${allIssues.map((issue, i) => `
           <div class="issue-card ${issue.severity}">
             <div class="issue-header">
-              <span class="severity-tag sev-${issue.severity}">${issue.severity === 'block' ? '阻断' : issue.severity === 'warning' ? '警告' : '建议'}</span>
+              <span class="severity-tag sev-${issue.severity}">${issue.severity === 'block' ? t('sev.block') : issue.severity === 'warning' ? t('sev.warning') : t('sev.info')}</span>
               ${issue.finding_type ? `<span class="severity-tag ft-${issue.finding_type}">${escapeHtml(findingTypeZh(issue.finding_type))}</span>` : ''}
               ${issue.rule_id ? `<span class="rule-id-tag">${escapeHtml(issue.rule_id)}</span>` : ''}
-              ${issue.requires_human_review ? '<span class="severity-tag sev-warning">需人工复核</span>' : ''}
-              <span class="issue-title">${escapeHtml(issue.title || '未命名问题')}</span>
+              ${issue.requires_human_review ? `<span class="severity-tag sev-warning">${t('detail.humanReview')}</span>` : ''}
+              <span class="issue-title">${escapeHtml(issue.title || t('detail.unnamed'))}</span>
             </div>
-            ${issue.location ? `<div class="issue-meta">📍 ${escapeHtml(issue.location)}${issue.category_name ? ' | ' + escapeHtml(issue.category_name) : ''}${issue.standard_source && issue.standard_source !== 'BASELINE' ? ' | ' + escapeHtml(issue.standard_source) : ''}${issue.source === 'rule' || issue.source === 'deterministic' ? ' | 规则检测' : ' | AI检测'}</div>` : ''}
+            ${issue.location ? `<div class="issue-meta">📍 ${escapeHtml(issue.location)}${issue.category_name ? ' | ' + escapeHtml(issue.category_name) : ''}${issue.standard_source && issue.standard_source !== 'BASELINE' ? ' | ' + escapeHtml(issue.standard_source) : ''}${issue.source === 'rule' || issue.source === 'deterministic' ? ' | ' + t('detail.ruleDetected') : ' | ' + t('detail.aiDetected')}</div>` : ''}
             ${issue.description ? `<div class="issue-desc">${escapeHtml(issue.description)}</div>` : ''}
-            ${issue.evidence && issue.evidence.length ? `<div class="issue-evidence">🔎 证据：${issue.evidence.map(e => escapeHtml(String(e))).join('；')}</div>` : ''}
-            ${issue.calculation && Object.keys(issue.calculation).length ? `<div class="issue-calc">🧮 计算：${calcText(issue.calculation)}</div>` : ''}
-            ${issue.engineering_risk ? `<div class="issue-risk">⚠️ 工程风险：${escapeHtml(issue.engineering_risk)}</div>` : ''}
+            ${issue.evidence && issue.evidence.length ? `<div class="issue-evidence">${t('detail.evidence')}${issue.evidence.map(e => escapeHtml(String(e))).join('；')}</div>` : ''}
+            ${issue.calculation && Object.keys(issue.calculation).length ? `<div class="issue-calc">${t('detail.calc')}${calcText(issue.calculation)}</div>` : ''}
+            ${issue.engineering_risk ? `<div class="issue-risk">${t('detail.risk')}${escapeHtml(issue.engineering_risk)}</div>` : ''}
             ${issue.suggestion ? `<div class="issue-suggestion">${escapeHtml(issue.suggestion)}</div>` : ''}
           </div>
         `).join('')}
@@ -1118,9 +1621,9 @@ function renderDrawerRight(file) {
   } else {
     issuesHTML = `
       <div class="detail-section">
-        <div class="detail-section-title">✅ 审核结果</div>
+        <div class="detail-section-title">${t('detail.result')}</div>
         <div style="padding:20px; text-align:center; color:var(--success); font-size:14px;">
-          未发现问题，图纸审核通过！
+          ${t('detail.noIssues')}
         </div>
       </div>
     `;
@@ -1131,12 +1634,12 @@ function renderDrawerRight(file) {
   if (file.check_results && file.check_results.length > 0) {
     checksHTML = `
       <div class="detail-section">
-        <div class="detail-section-title">📋 各检查项结果</div>
+        <div class="detail-section-title">${t('detail.checklist')}</div>
         ${file.check_results.map(cr => `
           <div style="padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; display:flex; align-items:center; gap:8px;">
             <span style="color:${cr.passed ? 'var(--success)' : 'var(--danger)'};">${cr.passed ? '✅' : '❌'}</span>
             <span style="flex:1;">${escapeHtml(cr.checklist_name)}</span>
-            <span style="color:var(--text-tertiary);">${cr.issues ? cr.issues.length : 0} 个问题</span>
+            <span style="color:var(--text-tertiary);">${t('detail.issueCount', cr.issues ? cr.issues.length : 0)}</span>
           </div>
         `).join('')}
       </div>
@@ -1148,7 +1651,7 @@ function renderDrawerRight(file) {
   if (file.report_md_path || file.report_json_path) {
     reportHTML = `
       <div class="detail-section">
-        <div class="detail-section-title">📁 报告文件</div>
+        <div class="detail-section-title">${t('detail.reportFiles')}</div>
         ${file.report_md_path ? `<div style="font-size:12px; padding:4px 0; color:var(--text-secondary);">📄 Markdown: <code style="background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; font-size:11px;">${escapeHtml(file.report_md_path)}</code></div>` : ''}
         ${file.report_json_path ? `<div style="font-size:12px; padding:4px 0; color:var(--text-secondary);">📊 JSON: <code style="background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; font-size:11px;">${escapeHtml(file.report_json_path)}</code></div>` : ''}
       </div>
@@ -1179,8 +1682,8 @@ function renderChecklistModal() {
   `).join('') + `
     <div class="rule-lib-toggle" onclick="toggleRuleLibrary()">
       <span id="ruleLibArrow">▸</span>
-      <span>📐 Baseline 规则库 V1.0</span>
-      <span class="rule-lib-count">${state.ruleCatalog ? state.ruleCatalog.categories.reduce((s, c) => s + c.rules.length, 0) : ''} 条规则</span>
+      <span>${t('checklist.ruleLib')}</span>
+      <span class="rule-lib-count">${state.ruleCatalog ? state.ruleCatalog.categories.reduce((s, c) => s + c.rules.length, 0) : ''} ${t('checklist.rules')}</span>
     </div>
     <div class="rule-lib" id="ruleLibrary" style="display:none;"></div>
   `;
@@ -1192,7 +1695,7 @@ function renderRuleLibrary() {
   if (!lib || !state.ruleCatalog) return;
   lib.innerHTML = `
     <div style="font-size:11px; color:var(--text-tertiary); margin:8px 0 4px;">
-      审核标准：${escapeHtml(state.ruleCatalog.audit_standard)}${state.ruleCatalog.overrides && state.ruleCatalog.overrides.length ? ` ｜ ${state.ruleCatalog.overrides.length} 项企业覆盖生效` : ''}
+      ${t('checklist.standard', escapeHtml(state.ruleCatalog.audit_standard))}${state.ruleCatalog.overrides && state.ruleCatalog.overrides.length ? ` ｜ ${state.ruleCatalog.overrides.length} ${t('checklist.overrides')}` : ''}
     </div>
     ${state.ruleCatalog.categories.map(cat => `
       <div class="rule-cat">
@@ -1203,7 +1706,7 @@ function renderRuleLibrary() {
             <span class="rule-name" title="${escapeHtml(r.name)}">${escapeHtml(r.name_zh || r.name)}</span>
             <span class="rule-tag sev-${r.severity === 'CRITICAL' ? 'block' : 'warning'}">${r.severity}</span>
             <span class="rule-tag exec-${r.execution}">${r.execution}</span>
-            ${r.custom ? '<span class="rule-tag custom">企业</span>' : ''}
+            ${r.custom ? `<span class="rule-tag custom">${t('checklist.enterprise')}</span>` : ''}
           </div>
         `).join('')}
       </div>
@@ -1248,8 +1751,8 @@ function openApiConfigModal() {
   document.getElementById('apiKey').value = '';  // 不回填明文 Key
   const masked = cfg.api_key_masked || '';
   document.getElementById('apiKeyCurrent').innerHTML = masked
-    ? `当前已配置：<code>${masked}</code>（保存新 Key 将覆盖）`
-    : '当前未配置 API Key，将以演示模式运行';
+    ? t('api.configured', `<code>${masked}</code>`)
+    : t('api.notConfigured');
   document.getElementById('apiConfigModal').classList.add('open');
 }
 
@@ -1267,9 +1770,9 @@ async function saveApiConfig() {
   const apiKey = document.getElementById('apiKey').value.trim();
   const model = document.getElementById('apiModel').value.trim();
 
-  if (!baseUrl) { showToast('请填写 Base URL', 'error'); return; }
-  if (!apiKey) { showToast('请填写 API Key', 'error'); return; }
-  if (!model) { showToast('请填写 Model 名称', 'error'); return; }
+  if (!baseUrl) { showToast(t('api.fillBaseUrl'), 'error'); return; }
+  if (!apiKey) { showToast(t('api.fillKey'), 'error'); return; }
+  if (!model) { showToast(t('api.fillModel'), 'error'); return; }
 
   try {
     const resp = await fetch('/api/config', {
@@ -1279,7 +1782,7 @@ async function saveApiConfig() {
     });
     const data = await resp.json();
     if (!resp.ok) {
-      showToast(data.detail || '保存失败', 'error');
+      showToast(data.detail || t('api.saveFailed'), 'error');
       return;
     }
     // 更新本地状态
@@ -1292,28 +1795,28 @@ async function saveApiConfig() {
     }
     document.getElementById('demoModeBadge').style.display = 'none';
     closeApiConfigModal();
-    showToast('✅ AI 配置已保存，已切换为正式模式', 'success');
+    showToast(t('api.saved'), 'success');
   } catch (e) {
-    showToast('保存失败：' + e.message, 'error');
+    showToast(t('api.saveFailed') + ': ' + e.message, 'error');
   }
 }
 
 function applyChecklist() {
   updateChecklistCount();
   closeChecklistModal();
-  showToast(`已选择 ${state.selectedChecklist.length} 项检查`, 'success');
+  showToast(t('toast.checklistSelected', state.selectedChecklist.length), 'success');
 }
 
 function updateChecklistCount() {
   const el = document.getElementById('checklistCount');
   if (state.ruleCatalog) {
     const rules = state.ruleCatalog.categories.reduce((s, c) => s + c.rules.length, 0);
-    el.textContent = `${state.selectedChecklist.length}项检查 · ${rules}条规则已启用`;
+    el.textContent = t('checklist.enabled', state.selectedChecklist.length, rules);
     // 把审核标准徽标显示为可点击查看规则库
     const stdTag = document.getElementById('stdTag');
-    if (stdTag) stdTag.textContent = `审核标准 · ${state.ruleCatalog.audit_standard}`;
+    if (stdTag) stdTag.textContent = t('checklist.standardBadge', state.ruleCatalog.audit_standard);
   } else {
-    el.textContent = `${state.selectedChecklist.length}项检查已启用`;
+    el.textContent = t('checklist.enabledSimple', state.selectedChecklist.length);
   }
 }
 
@@ -1332,7 +1835,7 @@ function handleInputKey(e) {
 
 function browseFolder() {
   // 浏览器无法直接选择本地文件夹，提示用户粘贴路径
-  showToast('请在输入框中粘贴图纸文件夹的完整路径', 'info');
+  showToast(t('toast.folderPath'), 'info');
   document.getElementById('folderInput').focus();
 }
 
@@ -1347,92 +1850,95 @@ function resetToNewTask() {
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('featurePage').classList.remove('active');
   document.getElementById('exportBtn').style.display = 'none';
-  document.getElementById('mainHeaderTitle').textContent = '2D图纸审核';
+  document.getElementById('mainHeaderTitle').textContent = t('mainHeader.default');
   // 清除侧边栏导航选中态
   document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
 }
 
 // ========== 功能详情页 ==========
-const FEATURE_PAGES = {
-  chunking: {
-    icon: '🔍',
-    title: '智能分块审核',
-    subtitle: '针对工程图纸大尺寸、高密度标注的特点，采用多尺度分块策略，解决视觉大模型在工程图纸上的分辨率与幻觉瓶颈。',
-    iconBg: 'linear-gradient(135deg, #e8f0ff, #d0e0ff)',
-    sections: [
-      {
-        title: '分块策略',
-        steps: [
-          { num: '1', title: '全局缩略图（150 DPI）', desc: '审查总体布局、视图完整性、图框位置、各视图比例关系' },
-          { num: '2', title: '标题栏高保真切片（400 DPI）', desc: '截取右下角标题栏区域，高保真识别图名、图号、版本、签名、材料等文字信息' },
-          { num: '3', title: '高密度标注区分块（300 DPI）', desc: '将页面切分为 2~4 个局部高清区域，专注尺寸标注、公差、工艺特征等细节审查' },
-        ]
-      },
-      {
-        title: '技术特点',
-        tags: ['多尺度渲染', '自动空白过滤', '标题栏智能定位', '切片并行审核', '结果自动去重合并']
-      },
-      {
-        title: '适用范围',
-        desc: 'A4、A3、A2 尺寸图纸效果最佳。A1、A0 大尺寸图纸因标注密度过高，暂不支持。'
-      }
-    ]
-  },
-  rulecheck: {
-    icon: '⚙️',
-    title: '规则前置检查',
-    subtitle: '利用 PDF 矢量文本层，通过正则表达式和规则引擎零误差校验标题栏信息，减轻 AI 视觉模型压力，提高文字类信息准确率。',
-    iconBg: 'linear-gradient(135deg, #e8fff0, #d0ffd8)',
-    sections: [
-      {
-        title: '检查流程',
-        steps: [
-          { num: '1', title: '矢量文本提取', desc: '通过 PyMuPDF 提取 PDF 中的矢量文本层（扫描件/图片PDF无此层）' },
-          { num: '2', title: '标题栏信息解析', desc: '用正则表达式提取图号、版本、材料、比例、日期、签名等关键字段' },
-          { num: '3', title: '规则校验', desc: '校验图号格式、版本合规性、签名栏是否为空、未注公差说明是否存在等' },
-          { num: '4', title: '结果传递给 AI', desc: '已提取的标题栏信息作为上下文注入 AI 审核 prompt，避免 AI 重复识别或误读' },
-        ]
-      },
-      {
-        title: '内置检查项',
-        tags: ['图号格式校验', '版本号检测', '材料牌号识别', '比例标注检测', '签名栏空值检测', '出图日期检测', '未注公差说明', '占位符文字检测']
-      },
-      {
-        title: '自定义规则',
-        desc: '在 custom_rules.py 的 CUSTOM_RULE_CHECKS 中可添加自定义正则规则，支持 must_exist（必须存在）和 must_not_exist（禁止存在）两种模式。'
-      }
-    ]
-  },
-  dashboard: {
-    icon: '📊',
-    title: '汇总看板',
-    subtitle: '批量审核完成后，以可视化看板展示整批图纸的健康度、缺陷统计和通过率，支持逐张下钻查看详细问题。',
-    iconBg: 'linear-gradient(135deg, #fff7e8, #ffe8c8)',
-    sections: [
-      {
-        title: '看板内容',
-        steps: [
-          { num: '1', title: '健康度环', desc: '整批图纸通过率可视化，绿色≥80%、橙色≥50%、红色<50%' },
-          { num: '2', title: '缺陷统计卡片', desc: '阻断级（Block）、警告级（Warning）、建议级（Info）三级问题数量统计' },
-          { num: '3', title: '逐张结果表', desc: '每张图纸的通过状态、各级问题数量，点击行展开双栏详情面板' },
-          { num: '4', title: '双栏详情面板', desc: '左侧原图预览 + 右侧问题清单（含位置描述和修改建议），问题按严重等级排序' },
-        ]
-      },
-      {
-        title: '报告产物',
-        tags: ['单张 Markdown 报告', '单张 JSON 数据', '批量汇总报告', '审核历史 SQLite']
-      },
-      {
-        title: '数据对接',
-        desc: '每张图纸生成的 _audit_result.json 为结构化数据，可方便地对接 ERP/PLM 系统或导出 Excel 缺陷清单。'
-      }
-    ]
-  }
-};
+function getFeaturePages() {
+  return {
+    chunking: {
+      icon: '🔍',
+      title: t('feature.chunking.title'),
+      subtitle: t('feature.chunking.subtitle'),
+      iconBg: 'linear-gradient(135deg, #e8f0ff, #d0e0ff)',
+      sections: [
+        {
+          title: t('feature.chunking.s1.title'),
+          steps: [
+            { num: '1', title: t('feature.chunking.s1.step1.title'), desc: t('feature.chunking.s1.step1.desc') },
+            { num: '2', title: t('feature.chunking.s1.step2.title'), desc: t('feature.chunking.s1.step2.desc') },
+            { num: '3', title: t('feature.chunking.s1.step3.title'), desc: t('feature.chunking.s1.step3.desc') },
+          ]
+        },
+        {
+          title: t('feature.chunking.s2.title'),
+          tags: [t('feature.chunking.s2.tag1'), t('feature.chunking.s2.tag2'), t('feature.chunking.s2.tag3'), t('feature.chunking.s2.tag4'), t('feature.chunking.s2.tag5')]
+        },
+        {
+          title: t('feature.chunking.s3.title'),
+          desc: t('feature.chunking.s3.desc')
+        }
+      ]
+    },
+    rulecheck: {
+      icon: '⚙️',
+      title: t('feature.rulecheck.title'),
+      subtitle: t('feature.rulecheck.subtitle'),
+      iconBg: 'linear-gradient(135deg, #e8fff0, #d0ffd8)',
+      sections: [
+        {
+          title: t('feature.rulecheck.s1.title'),
+          steps: [
+            { num: '1', title: t('feature.rulecheck.s1.step1.title'), desc: t('feature.rulecheck.s1.step1.desc') },
+            { num: '2', title: t('feature.rulecheck.s1.step2.title'), desc: t('feature.rulecheck.s1.step2.desc') },
+            { num: '3', title: t('feature.rulecheck.s1.step3.title'), desc: t('feature.rulecheck.s1.step3.desc') },
+            { num: '4', title: t('feature.rulecheck.s1.step4.title'), desc: t('feature.rulecheck.s1.step4.desc') },
+          ]
+        },
+        {
+          title: t('feature.rulecheck.s2.title'),
+          tags: [t('feature.rulecheck.s2.tag1'), t('feature.rulecheck.s2.tag2'), t('feature.rulecheck.s2.tag3'), t('feature.rulecheck.s2.tag4'), t('feature.rulecheck.s2.tag5'), t('feature.rulecheck.s2.tag6'), t('feature.rulecheck.s2.tag7'), t('feature.rulecheck.s2.tag8')]
+        },
+        {
+          title: t('feature.rulecheck.s3.title'),
+          desc: t('feature.rulecheck.s3.desc')
+        }
+      ]
+    },
+    dashboard: {
+      icon: '📊',
+      title: t('feature.dashboard.title'),
+      subtitle: t('feature.dashboard.subtitle'),
+      iconBg: 'linear-gradient(135deg, #fff7e8, #ffe8c8)',
+      sections: [
+        {
+          title: t('feature.dashboard.s1.title'),
+          steps: [
+            { num: '1', title: t('feature.dashboard.s1.step1.title'), desc: t('feature.dashboard.s1.step1.desc') },
+            { num: '2', title: t('feature.dashboard.s1.step2.title'), desc: t('feature.dashboard.s1.step2.desc') },
+            { num: '3', title: t('feature.dashboard.s1.step3.title'), desc: t('feature.dashboard.s1.step3.desc') },
+            { num: '4', title: t('feature.dashboard.s1.step4.title'), desc: t('feature.dashboard.s1.step4.desc') },
+          ]
+        },
+        {
+          title: t('feature.dashboard.s2.title'),
+          tags: [t('feature.dashboard.s2.tag1'), t('feature.dashboard.s2.tag2'), t('feature.dashboard.s2.tag3'), t('feature.dashboard.s2.tag4')]
+        },
+        {
+          title: t('feature.dashboard.s3.title'),
+          desc: t('feature.dashboard.s3.desc')
+        }
+      ]
+    }
+  };
+}
 
 function showFeaturePage(featureId) {
-  const page = FEATURE_PAGES[featureId];
+  const page = getFeaturePages()[featureId];
   if (!page) return;
+  state.currentFeature = featureId;
 
   // 隐藏其他视图
   document.getElementById('emptyState').style.display = 'none';
@@ -1449,7 +1955,7 @@ function showFeaturePage(featureId) {
   let html = `
     <div class="feature-back-btn" onclick="resetToNewTask()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      返回审核
+      ${t('feature.back')}
     </div>
     <div class="feature-page-header">
       <div class="feature-page-icon" style="background:${page.iconBg}">${page.icon}</div>
@@ -1488,10 +1994,10 @@ function showFeaturePage(featureId) {
 
 async function exportSummary() {
   if (!state.currentTask || !state.currentTask.summary_report_path) {
-    showToast('汇总报告尚未生成', 'info');
+    showToast(t('toast.noSummary'), 'info');
     return;
   }
-  showToast(`报告已保存到：${state.currentTask.summary_report_path}`, 'success');
+  showToast(t('toast.reportSaved', state.currentTask.summary_report_path), 'success');
 }
 
 async function loadHistory() {
@@ -1501,7 +2007,7 @@ async function loadHistory() {
     const list = document.getElementById('historyList');
 
     if (!data.tasks || data.tasks.length === 0) {
-      list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px;">暂无历史记录</div>';
+      list.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px;">${t('history.empty')}</div>`;
       return;
     }
 
@@ -1509,18 +2015,18 @@ async function loadHistory() {
       let badge = '';
       if (t.status === 'completed') {
         badge = t.pass_rate >= 80
-          ? '<span class="history-item-badge badge-pass">通过</span>'
-          : '<span class="history-item-badge badge-fail">不通过</span>';
+          ? `<span class="history-item-badge badge-pass">${t('history.pass')}</span>`
+          : `<span class="history-item-badge badge-fail">${t('history.fail')}</span>`;
       } else if (t.status === 'auditing') {
-        badge = '<span class="history-item-badge badge-running">进行中</span>';
+        badge = `<span class="history-item-badge badge-running">${t('history.running')}</span>`;
       }
       const date = t.created_at ? t.created_at.substring(0, 10) : '';
       return `
-        <div class="history-item" onclick="loadTaskDetail('${t.task_id}')">
-          <div class="history-item-name">${escapeHtml(t.folder_name || '未命名')}</div>
+        <div class="history-item" onclick="loadTaskDetail('${t.task_id}')" oncontextmenu="showContextMenu(event, '${t.task_id}', '${escapeHtml(t.folder_name || t('history.unnamed'))}')">
+          <div class="history-item-name">${escapeHtml(t.folder_name || t('history.unnamed'))}</div>
           <div class="history-item-meta">
             <span>${date}</span>
-            <span>${t.total_files}张</span>
+            <span>${t('history.files', t.total_files)}</span>
             ${badge}
           </div>
         </div>
@@ -1530,6 +2036,72 @@ async function loadHistory() {
     // 静默失败
   }
 }
+
+// ========== 最近审核：折叠 / 右键删除 ==========
+let historyCollapsed = false;
+function toggleHistory() {
+  historyCollapsed = !historyCollapsed;
+  const list = document.getElementById('historyList');
+  const arrow = document.getElementById('collapseArrow');
+  if (historyCollapsed) {
+    list.classList.add('collapsed');
+    arrow.classList.add('collapsed');
+  } else {
+    list.classList.remove('collapsed');
+    arrow.classList.remove('collapsed');
+  }
+}
+
+function showContextMenu(e, taskId, folderName) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideContextMenu();
+  const menu = document.getElementById('contextMenu');
+  document.getElementById('contextMenuName').textContent = folderName;
+  document.getElementById('contextMenuDelete').setAttribute('data-task-id', taskId);
+  menu.classList.add('show');
+  // 定位在鼠标处，防止超出窗口
+  const menuW = 170, menuH = 90;
+  let x = e.clientX, y = e.clientY;
+  if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 8;
+  if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 8;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('contextMenu');
+  if (menu) menu.classList.remove('show');
+}
+
+async function deleteHistoryItem(taskId) {
+  hideContextMenu();
+  if (!confirm(t('ctx.confirm'))) return;
+  try {
+    const resp = await fetch('/api/tasks/' + taskId, { method: 'DELETE' });
+    if (resp.ok) {
+      loadHistory();
+      // 如果当前正在查看该任务详情，返回空态
+      if (state.currentTaskId === taskId) {
+        resetToNewTask();
+      }
+    } else {
+      alert(t('ctx.deleteFail'));
+    }
+  } catch (e) {
+    alert(t('ctx.deleteErr', e.message));
+  }
+}
+
+// 点击页面其他区域隐藏右键菜单
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('contextMenu');
+  if (menu && !menu.contains(e.target)) hideContextMenu();
+});
+document.addEventListener('contextmenu', function(e) {
+  // 右键点击空白区域时隐藏菜单
+  if (!e.target.closest('.history-item')) hideContextMenu();
+});
 
 // ========== 工具函数 ==========
 function escapeHtml(text) {

@@ -392,6 +392,18 @@ async def get_task(task_id: str):
     return {"task_id": task_id, "files": files, "from_db": True}
 
 
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: str):
+    """删除历史任务记录（内存 + 数据库）"""
+    deleted = task_manager.delete_task(task_id)
+    if not deleted:
+        # 数据库中无记录但内存中有（例如刚创建未完成的任务）
+        batch = task_manager.get_task(task_id)
+        if batch is None:
+            raise HTTPException(status_code=404, detail="任务不存在")
+    return {"status": "deleted", "task_id": task_id}
+
+
 @app.get("/api/tasks/{task_id}/files/{file_index}")
 async def get_file_result(task_id: str, file_index: int):
     """获取单个文件的审核详情（含缩略图；重启后从数据库恢复）"""

@@ -240,6 +240,24 @@ class TaskManager:
         conn.close()
         return [dict(r) for r in rows]
 
+    def delete_task(self, task_id: str) -> bool:
+        """删除任务记录（内存 + 数据库），返回是否删除了数据"""
+        # 从内存活动任务中移除
+        self._active_tasks.pop(task_id, None)
+        # 从数据库移除
+        deleted = False
+        try:
+            conn = sqlite3.connect(str(DB_PATH))
+            cur = conn.cursor()
+            cur.execute("DELETE FROM audit_files WHERE task_id = ?", (task_id,))
+            cur.execute("DELETE FROM audit_tasks WHERE task_id = ?", (task_id,))
+            conn.commit()
+            deleted = cur.rowcount > 0
+            conn.close()
+        except Exception as e:
+            print(f"删除任务记录失败 {task_id}: {e}")
+        return deleted
+
     def restore_task_from_db(self, task_id: str) -> Optional[BatchAuditResult]:
         """
         从数据库重建完整任务详情（服务重启后恢复已完成/部分完成任务的审核详情）。
