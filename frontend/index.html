@@ -275,6 +275,21 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
 .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
 .modal-title { font-size: 15px; font-weight: 600; }
 .modal-body { flex: 1; overflow-y: auto; padding: 12px 20px; }
+.profile-option {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.profile-option:hover { border-color: var(--accent); background: #f8fbff; }
+.profile-option.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, #eef4ff 0%, #f5f0ff 100%);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
 .checklist-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
 .checklist-item:last-child { border-bottom: none; }
 .checklist-checkbox { width: 18px; height: 18px; border: 2px solid var(--border-color); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all 0.15s; }
@@ -446,6 +461,7 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
             <button class="input-tag active" id="checklistTag" onclick="openChecklistModal()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
               <span data-i18n="audit.standard">审核标准</span>
+              <span id="stdTag" style="margin-left:6px; font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; background:rgba(37,99,235,0.08); color:#2563eb;">A · LeRouge</span>
             </button>
             <button class="input-tag" id="recursiveTag" onclick="toggleRecursive()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -687,6 +703,16 @@ const I18N = {
     'checklist.overrides': '项企业覆盖生效',
     'checklist.enabled': '{0}项检查 · {1}条规则已启用',
     'checklist.enabledSimple': '{0}项检查已启用',
+    'profile.title': '审核标准 Profile',
+    'profile.a': 'A · LeRouge（现场实战/保守型）',
+    'profile.b': 'B · 标准全功能（终审/教学）',
+    'profile.aDesc': '聚焦 LeRouge 8 条核心红线 · 版本/签审/公差表免检 · 需人工审核',
+    'profile.bDesc': '全量 28 条母库 + 2 条补充规则 · 严格通过/不通过',
+    'profile.exempt': '免检',
+    'profile.exemptHint': 'Profile A 下版本/签审/模板公差表为免检项',
+    'profile.switched': '已切换审核标准为：{0}',
+    'profile.selectHint': '运行时切换审核标准（自动记忆；环境变量 AUDIT_PROFILE 为默认值）',
+    'profile.count': '{0} 条规则已启用',
     'checklist.standardBadge': '审核标准 · {0}',
     'history.pass': '通过',
     'history.fail': '不通过',
@@ -888,6 +914,16 @@ const I18N = {
     'checklist.overrides': 'enterprise override(s) active',
     'checklist.enabled': '{0} items · {1} rules enabled',
     'checklist.enabledSimple': '{0} items enabled',
+    'profile.title': 'Audit Profile',
+    'profile.a': 'A · LeRouge (Site / Conservative)',
+    'profile.b': 'B · Standard Full (Final / Teaching)',
+    'profile.aDesc': 'Focus on 8 LeRouge core red lines · revision/sign-off/tolerance table exempt · Require Manual Review',
+    'profile.bDesc': 'All 28 baseline + 2 supplementary rules · strict PASS/FAIL',
+    'profile.exempt': 'Exempt',
+    'profile.exemptHint': 'Profile A: revision / sign-off / template tolerance table are exempt',
+    'profile.switched': 'Audit standard switched to: {0}',
+    'profile.selectHint': 'Switch audit standard at runtime (remembered; AUDIT_PROFILE env is the fallback)',
+    'profile.count': '{0} rules enabled',
     'checklist.standardBadge': 'Audit standard · {0}',
     'history.pass': 'Pass',
     'history.fail': 'Fail',
@@ -1037,6 +1073,9 @@ const state = {
   config: null,
   ruleCatalog: null, // /api/rules 返回的规则库
   selectedChecklist: [],
+  profile: 'A',      // 审核 Profile：A=LeRouge 保守型 / B=标准全功能
+  profiles: null,    // /api/profile 返回的档位配置
+  enabledRuleCount: null, // 当前 Profile 下启用规则数
   recursive: true,
   fileResults: {}, // index -> file result
   isAuditing: false,
@@ -1047,7 +1086,19 @@ async function init() {
   try {
     const resp = await fetch('/api/config');
     state.config = await resp.json();
+    state.profile = state.config.profile || 'A';
     state.selectedChecklist = state.config.default_checklist.filter(c => c.enabled).map(c => c.id);
+
+    // 加载 Profile 档位配置
+    try {
+      const pr = await fetch('/api/profile');
+      const pdata = await pr.json();
+      state.profiles = pdata.profiles || null;
+      state.enabledRuleCount = pdata.enabled_rule_count != null ? pdata.enabled_rule_count : null;
+    } catch (e) {
+      console.warn('Profile 配置加载失败', e);
+    }
+
     renderChecklistModal();
     updateChecklistCount();
     loadHistory();
@@ -1670,16 +1721,25 @@ function closeDrawer() {
 function renderChecklistModal() {
   const body = document.getElementById('checklistBody');
   if (!state.config) return;
-  body.innerHTML = state.config.default_checklist.map(item => `
+
+  // ── Profile 选择器（运行时动态切换） ──
+  const profileBlock = renderProfileSelector();
+
+  const checklistItems = state.config.default_checklist.map(item => `
     <div class="checklist-item">
       <div class="checklist-checkbox ${state.selectedChecklist.includes(item.id) ? 'checked' : ''}"
            data-id="${item.id}" onclick="toggleChecklistItem('${item.id}')"></div>
       <div class="checklist-text">
-        <div class="checklist-name">${escapeHtml(item.name)}</div>
+        <div class="checklist-name">${escapeHtml(item.name)}
+          ${state.profile === 'A' && (state.profiles && state.profiles.A && state.profiles.A.exempt_checklist || []).includes(item.id)
+            ? `<span class="rule-tag custom" style="margin-left:6px;">${t('profile.exempt')}</span>` : ''}
+        </div>
         <div class="checklist-desc">${escapeHtml(item.description)}</div>
       </div>
     </div>
-  `).join('') + `
+  `).join('');
+
+  body.innerHTML = profileBlock + checklistItems + `
     <div class="rule-lib-toggle" onclick="toggleRuleLibrary()">
       <span id="ruleLibArrow">▸</span>
       <span>${t('checklist.ruleLib')}</span>
@@ -1688,6 +1748,69 @@ function renderChecklistModal() {
     <div class="rule-lib" id="ruleLibrary" style="display:none;"></div>
   `;
   renderRuleLibrary();
+}
+
+function renderProfileSelector() {
+  if (!state.profiles) return '';
+  const p = state.profile;
+  const pf = state.profiles[p] || {};
+  const other = p === 'A' ? 'B' : 'A';
+  const of = state.profiles[other] || {};
+  const activeName = currentLang === 'en' ? (pf.name_en || pf.name) : pf.name;
+  return `
+    <div style="margin-bottom:12px; padding:12px; background:linear-gradient(135deg,#eef4ff 0%,#f5f0ff 100%); border:1px solid #dfe6f3; border-radius:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <div style="font-size:13px; font-weight:600; color:#334155;">${t('profile.title')}</div>
+        <div style="font-size:11px; color:#64748b;">${t('profile.count', state.enabledRuleCount !== null ? state.enabledRuleCount : state.config.rule_count)}</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div class="profile-option ${p === 'A' ? 'active' : ''}" onclick="switchProfile('A')">
+          <div style="font-weight:600; font-size:12px;">${t('profile.a')}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px; line-height:1.4;">${t('profile.aDesc')}</div>
+        </div>
+        <div class="profile-option ${p === 'B' ? 'active' : ''}" onclick="switchProfile('B')">
+          <div style="font-weight:600; font-size:12px;">${t('profile.b')}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px; line-height:1.4;">${t('profile.bDesc')}</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:8px;">${t('profile.selectHint')}</div>
+    </div>
+  `;
+}
+
+async function switchProfile(profile) {
+  if (state.profile === profile) return;
+  try {
+    const resp = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({profile: profile}),
+    });
+    const data = await resp.json();
+    if (!data.success) throw new Error('switch failed');
+    state.profile = data.profile;
+    state.enabledRuleCount = data.enabled_rule_count != null ? data.enabled_rule_count : state.enabledRuleCount;
+    // 按新 Profile 的有效检查项重置勾选
+    state.config = Object.assign({}, state.config, {
+      default_checklist: data.effective_checklist,
+      profile: data.profile,
+    });
+    state.selectedChecklist = data.effective_checklist.filter(c => c.enabled).map(c => c.id);
+    // 刷新规则库（规则归属随 Profile 变化）
+    try {
+      const r = await fetch('/api/rules');
+      state.ruleCatalog = await r.json();
+    } catch (e) {
+      console.warn('规则库刷新失败', e);
+    }
+    renderChecklistModal();
+    updateChecklistCount();
+    const pf = state.profiles && state.profiles[state.profile];
+    const name = currentLang === 'en' ? (pf ? pf.name_en : state.profile) : (pf ? pf.name : state.profile);
+    showToast(t('profile.switched', name), 'success');
+  } catch (e) {
+    showToast('Profile 切换失败: ' + e.message, 'error');
+  }
 }
 
 function renderRuleLibrary() {
@@ -1809,12 +1932,20 @@ function applyChecklist() {
 
 function updateChecklistCount() {
   const el = document.getElementById('checklistCount');
+  // 审核标准徽标：显示当前 Profile（A/B 档位）
+  const stdTag = document.getElementById('stdTag');
+  if (stdTag) {
+    const pf = state.profiles && state.profiles[state.profile];
+    let pname = state.profile;
+    if (pf) {
+      const full = currentLang === 'en' ? (pf.name_en || pf.name) : pf.name;
+      pname = state.profile + ' · ' + full.split('（')[0].split(' (')[0].trim();
+    }
+    stdTag.textContent = pname;
+  }
   if (state.ruleCatalog) {
     const rules = state.ruleCatalog.categories.reduce((s, c) => s + c.rules.length, 0);
     el.textContent = t('checklist.enabled', state.selectedChecklist.length, rules);
-    // 把审核标准徽标显示为可点击查看规则库
-    const stdTag = document.getElementById('stdTag');
-    if (stdTag) stdTag.textContent = t('checklist.standardBadge', state.ruleCatalog.audit_standard);
   } else {
     el.textContent = t('checklist.enabledSimple', state.selectedChecklist.length);
   }
