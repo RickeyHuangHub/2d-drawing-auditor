@@ -32,6 +32,28 @@ def _is_profile_a() -> bool:
     return get_profile() == "A"
 
 
+
+def _is_rev_issue(issue) -> bool:
+    """判断是否为版本/文件控制类问题（REV-* 规则）"""
+    rid = (getattr(issue, 'rule_id', '') or '').upper()
+    cat = (getattr(issue, 'category', '') or '').upper()
+    cat_name = getattr(issue, 'category_name', '') or ''
+    return rid.startswith('REV') or cat == 'REV' or cat_name == '版本/文件控制'
+
+
+def _issue_label(issue) -> str:
+    """Profile A（LeRouge）中性措辞：版本类阻断→要求忽略；警告→提示"""
+    if not _is_profile_a():
+        return SEVERITY_LABEL.get(issue.severity, '未知')
+    if issue.severity == Severity.BLOCK:
+        if _is_rev_issue(issue):
+            return '要求忽略（理论判定不合格）'
+        return '阻断级'
+    if issue.severity == Severity.WARNING:
+        return '提示级'
+    return SEVERITY_LABEL.get(issue.severity, '未知')
+
+
 def _appendix_text() -> str:
     """Profile A 报告末尾的免检附注"""
     return (
@@ -122,7 +144,7 @@ class ReportWriter:
         if _is_profile_a():
             # LeRouge 保守型：结论统一收敛为"需人工审核"
             lines.append(f"> **需人工审核（Require Manual Review）** — 共 {result.total_issues} 项待复核项"
-                         f"（🔴 阻断 {result.block_count} / 🟡 警告 {result.warning_count} / "
+                         f"（🔴 阻断 {result.block_count} / 🟡 提示 {result.warning_count} / "
                          f"🔵 建议 {result.info_count}），请工程师逐条复核后放行。")
         elif result.passed:
             lines.append("> **通过** — 未发现阻断级问题，可进入下一环节。")
@@ -140,8 +162,9 @@ class ReportWriter:
         lines.append("")
         lines.append("| 严重等级 | 数量 |")
         lines.append("|---------|------|")
+        warn_label = "提示级" if _is_profile_a() else "警告级"
         lines.append(f"| 🔴 阻断级 | {result.block_count} |")
-        lines.append(f"| 🟡 警告级 | {result.warning_count} |")
+        lines.append(f"| 🟡 {warn_label} | {result.warning_count} |")
         lines.append(f"| 🔵 建议级 | {result.info_count} |")
         lines.append(f"| **合计** | **{result.total_issues}** |")
         lines.append("")
@@ -234,7 +257,7 @@ class ReportWriter:
     def _format_issue(index: int, issue: IssueItem) -> List[str]:
         """格式化单条问题（含 Baseline 结构化字段）"""
         sev = SEVERITY_EMOJI.get(issue.severity, "⚪")
-        sev_label = SEVERITY_LABEL.get(issue.severity, "未知")
+        sev_label = _issue_label(issue)
         lines = [
             f"**{index}. {sev} [{sev_label}] {issue.title}**",
             "",
@@ -307,8 +330,9 @@ class ReportWriter:
         lines.append("")
         lines.append("| 严重等级 | 数量 |")
         lines.append("|---------|------|")
+        warn_label = "提示级" if _is_profile_a() else "警告级"
         lines.append(f"| 🔴 阻断级 | {batch.block_count} |")
-        lines.append(f"| 🟡 警告级 | {batch.warning_count} |")
+        lines.append(f"| 🟡 {warn_label} | {batch.warning_count} |")
         lines.append(f"| 🔵 建议级 | {batch.info_count} |")
         lines.append(f"| **合计** | **{batch.total_issues}** |")
         lines.append("")
@@ -316,7 +340,8 @@ class ReportWriter:
         # 逐张结果表
         lines.append("## 📋 逐张审核结果")
         lines.append("")
-        lines.append("| 序号 | 文件名 | 状态 | 阻断 | 警告 | 建议 | 结论 |")
+        warn_h = "提示" if _is_profile_a() else "警告"
+        lines.append(f"| 序号 | 文件名 | 状态 | 阻断 | {warn_h} | 建议 | 结论 |")
         lines.append("|------|--------|------|------|------|------|------|")
         for i, f in enumerate(batch.files, 1):
             if f.status == AuditStatus.FAILED:

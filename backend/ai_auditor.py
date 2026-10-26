@@ -718,7 +718,7 @@ class AIAuditor:
         results = self._group_by_category(issues)
         block_count = sum(1 for i in issues if i.severity == Severity.BLOCK)
         if block_count:
-            comment = f"发现 {block_count} 个阻断级问题，需修改后复审。（演示模式模拟数据）"
+            comment = f"发现 {block_count} 项需人工复核问题，请逐条确认后放行。（演示模式模拟数据）"
         elif issues:
             comment = f"发现 {len(issues)} 个待改进项，建议优化后发布。（演示模式模拟数据）"
         else:

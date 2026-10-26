@@ -1073,6 +1073,25 @@ function t(key, ...args) {
   args.forEach((a, i) => { s = s.replace(new RegExp('\\{' + i + '\\}', 'g'), a); });
   return s;
 }
+function sevText(issue) {
+  const key = issue && issue.severity;
+  if (currentLang === 'zh' && state.profile === 'A') {
+    if (key === 'warning') return '提示';
+    if (key === 'block' && issue.rule_id && String(issue.rule_id).toUpperCase().indexOf('REV') === 0) return '要求忽略（理论判定不合格）';
+  }
+  return t('sev.' + key);
+}
+
+function warnText() {
+  if (currentLang === 'zh' && state.profile === 'A') return '提示级问题';
+  return t('dashboard.warning');
+}
+
+function warnThText() {
+  if (currentLang === 'zh' && state.profile === 'A') return '提示';
+  return t('dashboard.thWarning');
+}
+
 function applyLanguage() {
   // 静态元素文本
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -1735,7 +1754,7 @@ function renderDashboard(task) {
         <div class="stat-sub">${t('dashboard.blockSub')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">${t('dashboard.warning')}</div>
+        <div class="stat-label">${warnText()}</div>
         <div class="stat-value warning">${task.warning_count}</div>
         <div class="stat-sub">${t('dashboard.warningSub')}</div>
       </div>
@@ -1753,7 +1772,7 @@ function renderDashboard(task) {
           <th>${t('dashboard.thName')}</th>
           <th style="width:80px;">${t('dashboard.thResult')}</th>
           <th style="width:80px;">${t('dashboard.thBlock')}</th>
-          <th style="width:80px;">${t('dashboard.thWarning')}</th>
+          <th style="width:80px;">${warnThText()}</th>
           <th style="width:80px;">${t('dashboard.thInfo')}</th>
           <th style="width:100px;">${t('dashboard.thReport')}</th>
         </tr>
@@ -1860,7 +1879,7 @@ function renderDrawerRight(file) {
         ${allIssues.map((issue, i) => `
           <div class="issue-card ${issue.severity}">
             <div class="issue-header">
-              <span class="severity-tag sev-${issue.severity}">${issue.severity === 'block' ? t('sev.block') : issue.severity === 'warning' ? t('sev.warning') : t('sev.info')}</span>
+              <span class="severity-tag sev-${issue.severity}">${sevText(issue)}</span>
               ${issue.finding_type ? `<span class="severity-tag ft-${issue.finding_type}">${escapeHtml(findingTypeZh(issue.finding_type))}</span>` : ''}
               ${issue.rule_id ? `<span class="rule-id-tag">${escapeHtml(issue.rule_id)}</span>` : ''}
               ${issue.requires_human_review ? `<span class="severity-tag sev-warning">${t('detail.humanReview')}</span>` : ''}
