@@ -315,6 +315,46 @@ AUTH_CONFIG = {
     "audit_log_path": DATA_DIR / "audit.log",
 }
 
+# ── 网页访问控制（部署模式：密码登录 + 用量限额）────────────
+# 密码保存在 data/access_config.json（data/ 已 gitignore，绝不提交 GitHub）。
+# 两个密码都为空 = 不启用访问控制（单机本地使用不受影响，直接进入）。
+# 任一密码非空 = 启用密码登录：普通用户受每日 token 限额，管理员无限额。
+# 环境变量可覆盖默认值：
+#   ACCESS_USER_PASSWORD / ACCESS_ADMIN_PASSWORD / ACCESS_DAILY_TOKEN_LIMIT
+ACCESS_CONFIG_PATH = DATA_DIR / "access_config.json"
+ACCESS_CONFIG = {
+    "user_password": os.getenv("ACCESS_USER_PASSWORD", ""),
+    "admin_password": os.getenv("ACCESS_ADMIN_PASSWORD", ""),
+    "daily_token_limit": int(os.getenv("ACCESS_DAILY_TOKEN_LIMIT", "2000000")),
+}
+
+
+def _load_local_access_config():
+    """从本地配置文件加载访问控制配置（覆盖环境变量默认值）"""
+    if not ACCESS_CONFIG_PATH.exists():
+        return
+    try:
+        import json
+        with open(ACCESS_CONFIG_PATH, "r", encoding="utf-8") as f:
+            local = json.load(f)
+        if local.get("user_password"):
+            ACCESS_CONFIG["user_password"] = str(local["user_password"])
+        if local.get("admin_password"):
+            ACCESS_CONFIG["admin_password"] = str(local["admin_password"])
+        if local.get("daily_token_limit") is not None:
+            ACCESS_CONFIG["daily_token_limit"] = int(local["daily_token_limit"])
+    except Exception:
+        pass  # 配置文件损坏时回退到环境变量/默认值
+
+
+def access_control_enabled() -> bool:
+    """是否启用网页访问控制（任一密码非空）"""
+    return bool(ACCESS_CONFIG.get("user_password") or ACCESS_CONFIG.get("admin_password"))
+
+
+# 模块加载时读取本地访问控制配置
+_load_local_access_config()
+
 # 严重等级定义
 SEVERITY_LEVELS = {
     "block":   {"label": "阻断级", "color": "#dc2626", "weight": 100},

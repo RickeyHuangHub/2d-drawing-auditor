@@ -6,7 +6,9 @@
 import asyncio
 import json
 import os
+import secrets
 import sys
+import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -29,7 +31,9 @@ from config import (FRONTEND_DIR, AI_CONFIG, DEFAULT_CHECKLIST,
                     PROFILE_CONFIG, get_profile, set_profile,
                     get_profile_config, get_effective_checklist,
                     get_enabled_rules,
-                    save_ai_config, get_masked_api_key)
+                    save_ai_config, get_masked_api_key,
+                    access_control_enabled, ACCESS_CONFIG)
+from backend.usage_tracker import quota_exceeded, quota_info
 from backend.models import TaskCreateRequest, AuditStatus
 from backend.task_manager import TaskManager
 
@@ -63,6 +67,10 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# ── 网页访问控制会话（部署模式启用密码后生效）────────────────
+# token -> {"role": "user"/"admin", "exp": 过期时间戳}
+SESSIONS: Dict[str, Dict] = {}
+
 
 # ── 审计日志（③：关键操作留痕，供生产/合规追溯）──────────────
 
@@ -83,16 +91,32 @@ def _write_audit_log(action: str, detail: str = ""):
 @app.middleware("http")
 async def auth_audit_middleware(request: Request, call_next):
     path = request.url.path
-    token = AUTH_CONFIG.get("token") or ""
-    if token and path.startswith("/api/") and not path.startswith("/api/config"):
-        expected = "Bearer " + token
-        auth_header = request.headers.get("Authorization", "")
-        # 兼容 query 传 token（供非浏览器客户端使用）
-        if auth_header != expected and request.query_params.get("token") != token:
-            return JSONResponse({"detail": "未授权：缺少或错误的访问令牌"}, status_code=401)
 
+    # 审计日志：关键写操作留痕
     if path.startswith("/api/") and request.method in ("POST", "PUT", "DELETE"):
         _write_audit_log(f"api_{request.method.lower()}", f"{request.method} {path}")
+
+    # ── 网页访问控制（部署模式：data/access_config.json 配置密码后启用）──
+    if access_control_enabled():
+        public_ok = (
+            path == "/"
+            or path.startswith("/static/")
+            or path in ("/api/login", "/api/logout", "/api/config")
+        )
+        if not public_ok:
+            token = (request.query_params.get("token", "") if path == "/ws"
+                     else request.headers.get("X-Audit-Token", ""))
+            sess = SESSIONS.get(token)
+            if not sess or sess["exp"] < time.time():
+                if token:
+                    SESSIONS.pop(token, None)
+                return JSONResponse({"detail": "未登录或会话已过期，请重新登录"}, status_code=401)
+            request.state.role = sess["role"]
+        else:
+            request.state.role = "public"
+    else:
+        # 本地模式：不启用访问控制，视为管理员（无限额）
+        request.state.role = "admin"
 
     response = await call_next(request)
     return response
@@ -133,6 +157,7 @@ async def get_config():
         "override_count": len(CUSTOM_OVERRIDES),
         "profile": profile,
         "profile_config": get_profile_config(),
+        "access_required": access_control_enabled(),
     }
 
 
@@ -154,6 +179,52 @@ async def get_profile_api():
         "enabled_rule_count": len(get_enabled_rules(
             [c["id"] for c in get_effective_checklist() if c.get("enabled", True)])),
     }
+
+
+class LoginRequest(BaseModel):
+    """网页访问登录请求：role=user（普通用户）或 admin（管理员）"""
+    password: str = ""
+    role: str = "user"
+
+
+@app.post("/api/login")
+async def login(req: LoginRequest):
+    """网页访问登录：普通用户 / 管理员（部署模式启用密码后生效）"""
+    if not access_control_enabled():
+        return {"success": True, "token": "", "role": "admin", "access_required": False}
+    role = "admin" if req.role.strip().lower() == "admin" else "user"
+    expected = ACCESS_CONFIG.get("admin_password" if role == "admin" else "user_password", "")
+    if not expected:
+        return JSONResponse(
+            {"detail": f"未配置{'管理员' if role == 'admin' else '普通用户'}密码，请检查 data/access_config.json"},
+            status_code=403)
+    if req.password != expected:
+        _write_audit_log("login_fail", f"role={role}")
+        return JSONResponse({"detail": "密码错误"}, status_code=401)
+    token = secrets.token_hex(16)
+    SESSIONS[token] = {"role": role, "exp": time.time() + 12 * 3600}
+    _write_audit_log("login", f"role={role}")
+    return {"success": True, "token": token, "role": role,
+            "access_required": True, "expires_in": 12 * 3600}
+
+
+@app.post("/api/logout")
+async def logout(request: Request):
+    """退出登录"""
+    token = request.headers.get("X-Audit-Token", "")
+    if token in SESSIONS:
+        SESSIONS.pop(token, None)
+    return {"success": True}
+
+
+@app.get("/api/quota")
+async def quota_api(request: Request):
+    """用量与限额信息：普通用户受每日限额，管理员无限额"""
+    role = getattr(request.state, "role", "admin")
+    info = quota_info()
+    info["role"] = role
+    info["unlimited"] = role == "admin"
+    return info
 
 
 class ProfileSwitchRequest(BaseModel):
@@ -258,13 +329,16 @@ async def get_rules():
 
 
 @app.post("/api/tasks")
-async def create_task(request: TaskCreateRequest):
+async def create_task(request: Request, body: TaskCreateRequest):
     """创建审核任务"""
+    # 普通用户每日限额检查（管理员无限额）
+    if getattr(request.state, "role", "admin") != "admin" and quota_exceeded():
+        raise HTTPException(status_code=429, detail="今日审核额度已用尽，请明日再试或联系管理员")
     try:
         batch = task_manager.create_task(
-            folder_path=request.folder_path,
-            checklist_ids=request.checklist_ids,
-            recursive=request.recursive,
+            folder_path=body.folder_path,
+            checklist_ids=body.checklist_ids,
+            recursive=body.recursive,
         )
         return {
             "task_id": batch.task_id,
@@ -282,12 +356,16 @@ async def create_task(request: TaskCreateRequest):
 
 
 @app.post("/api/upload")
-async def upload_drawings(files: List[UploadFile] = File(...),
+async def upload_drawings(request: Request,
+                          files: List[UploadFile] = File(...),
                           checklist_ids: Optional[str] = None,
                           recursive: bool = True):
     """拖拽/选择上传 PDF 图纸：保存到临时目录并创建审核任务。
     安全措施：单文件大小上限、分块写入、真实 PDF 文件头校验、单批数量上限。"""
     import uuid as _uuid
+    # 普通用户每日限额检查（管理员无限额）
+    if getattr(request.state, "role", "admin") != "admin" and quota_exceeded():
+        raise HTTPException(status_code=429, detail="今日审核额度已用尽，请明日再试或联系管理员")
     if not files:
         raise HTTPException(status_code=400, detail="未收到文件")
 
@@ -560,9 +638,10 @@ def main():
     print(f"   数据库:   {BASE_DIR / 'data' / 'audit_history.db'}\n")
     print("   按 Ctrl+C 停止服务\n")
 
-    # 自动打开浏览器
+    # 自动打开浏览器（绑定 0.0.0.0 时用 127.0.0.1 打开本机页面）
     try:
-        webbrowser.open(f"http://{host}:{port}")
+        open_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+        webbrowser.open(f"http://{open_host}:{port}")
     except Exception:
         pass
 

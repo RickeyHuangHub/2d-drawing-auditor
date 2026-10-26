@@ -256,6 +256,18 @@ class AIClient:
         resp = await client.post(url, headers=headers, json=payload)
         resp.raise_for_status()
         data = resp.json()
+
+        # 记录 token 用量（OpenAI 兼容响应含 usage 字段；记录失败不影响审核）
+        try:
+            usage = data.get("usage") or {}
+            _p = int(usage.get("prompt_tokens", 0) or 0)
+            _c = int(usage.get("completion_tokens", 0) or 0)
+            if _p or _c:
+                from backend.usage_tracker import record_usage
+                record_usage(_p, _c)
+        except Exception:
+            pass
+
         try:
             content = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as e:
