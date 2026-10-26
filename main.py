@@ -1,7 +1,7 @@
 """
 2D图纸审核高手 - FastAPI 主入口
 启动：python main.py
-访问：http://localhost:8000
+访问：http://127.0.0.1:9808
 """
 import asyncio
 import json
@@ -651,7 +651,7 @@ def main():
     import uvicorn
 
     host = os.getenv("HOST", "127.0.0.1")
-    default_port = int(os.getenv("PORT", "8080"))
+    default_port = int(os.getenv("PORT", "9808"))
 
     # 查找可用端口
     try:
