@@ -42,8 +42,8 @@ input { font-family: inherit; }
 .app { display: flex; height: 100vh; }
 
 /* ========== 左侧栏 ========== */
-.sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-.sidebar-header { padding: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); }
+.sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); background: #e9f5ec; border-right: 1px solid #d5e8da; display: flex; flex-direction: column; }
+.sidebar-header { padding: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #d5e8da; }
 .sidebar-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #3370ff, #6ea8ff); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
 .sidebar-title { font-size: 15px; font-weight: 600; }
 .sidebar-subtitle { font-size: 11px; color: var(--text-tertiary); }
@@ -79,6 +79,9 @@ input { font-family: inherit; }
 .badge-running { background: #e8f0ff; color: var(--accent); }
 
 .sidebar-footer { padding: 12px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; }
+.sidebar-logout-row { padding: 10px 12px 2px; display: flex; justify-content: center; }
+.sidebar-logout-row .logout-btn { font-size: 12px; color: var(--text-secondary); background: none; border: none; cursor: pointer; text-decoration: none; padding: 5px 16px; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+.sidebar-logout-row .logout-btn:hover { background: #d8efe0; color: #1f2329; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
 .status-text { font-size: 12px; color: var(--text-secondary); }
 
@@ -101,14 +104,14 @@ input { font-family: inherit; }
 .empty-logo svg { width: 40px; height: 40px; fill: white; }
 .empty-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .empty-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; text-align: center; max-width: 400px; line-height: 1.6; }
-.empty-limit { font-size: 12px; color: var(--warning); background: #fff7e8; border: 1px solid #ffe4b8; border-radius: 6px; padding: 8px 16px; margin-bottom: 32px; text-align: center; max-width: 420px; line-height: 1.6; }
+.empty-limit { font-size: 16px; font-weight: 700; color: #f53f3f; background: #fff1f0; border: 1px solid #ffccc7; border-radius: 6px; padding: 10px 16px; margin-bottom: 32px; text-align: center; max-width: 460px; line-height: 1.6; }
 .empty-features { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 600px; }
 
 /* 侧边栏功能导航 */
 .sidebar-nav { padding: 0 12px 8px; }
 .sidebar-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.15s; margin-bottom: 2px; }
-.sidebar-nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sidebar-nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.sidebar-nav-item:hover { background: #d8efe0; color: var(--text-primary); }
+.sidebar-nav-item.active { background: #c6e6d2; color: #1e6b2f; font-weight: 500; }
 .sidebar-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; }
 
 /* 功能详情页 */
@@ -264,12 +267,13 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
 .input-wrapper { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 4px; transition: border-color 0.2s, box-shadow 0.2s; }
 .input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(51,112,255,0.1); }
 .input-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
-.folder-input { flex: 1; border: none; background: transparent; font-size: 14px; padding: 8px 4px; outline: none; color: var(--text-primary); }
-.folder-input::placeholder { color: var(--text-tertiary); }
+.folder-input { flex: 1; border: none; background: #e9f5ec; border-radius: 6px; font-size: 14px; padding: 8px 10px; outline: none; color: var(--text-primary); }
+.folder-input::placeholder { color: #2563eb; font-weight: 700; }
 .input-actions { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-top: 1px solid var(--border-color); margin-top: 4px; }
 .input-tag { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: background 0.15s; }
 .input-tag:hover { background: var(--bg-hover); }
 .input-tag.active { background: var(--accent-light); color: var(--accent); }
+#checklistTag.input-tag.active { background: transparent; color: #1f2329; }
 .send-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; transition: background 0.2s; margin-left: auto; }
 .send-btn:hover { background: var(--accent-hover); }
 .send-btn:disabled { background: var(--bg-tertiary); color: var(--text-tertiary); cursor: not-allowed; }
@@ -422,6 +426,9 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
     <div class="history-list" id="historyList">
       <div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px;" data-i18n="history.empty">暂无历史记录</div>
     </div>
+    <div class="sidebar-logout-row">
+      <button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none;" data-i18n="login.logout">退出登录</button>
+    </div>
     <div class="sidebar-footer">
       <div class="status-dot" id="wsStatusDot"></div>
       <div class="status-text" id="wsStatusText" data-i18n="ws.connecting">连接中...</div>
@@ -448,7 +455,7 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
         <button class="header-btn" onclick="toggleLang()" id="langToggle" data-i18n-title="lang.switch" title="切换界面语言" style="padding:6px 10px; font-size:12px; font-weight:600;">EN</button>
         <button class="header-btn" onclick="exportSummary()" id="exportBtn" style="display:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span data-i18n="export.report">导出报告</span>
+          <span data-i18n="export.report">下载报告</span>
         </button>
       </div>
     </div>
@@ -461,7 +468,7 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
         </div>
         <div class="empty-title" data-i18n="empty.title">今天要审核哪批图纸？</div>
         <div class="empty-desc" data-i18n-html="empty.desc">选择包含 PDF 2D 图纸的文件夹，AI 将逐张进行专业审核，<br>1对1 给出修改建议并保存到对应文件夹。</div>
-        <div class="empty-limit" data-i18n="empty.limit">⚠️ 每次审核不超过 10 张 PDF 图纸；暂不支持 A1、A0 大尺寸图纸</div>
+        <div class="empty-limit" data-i18n-html="empty.limit">每次审核不超过 10 张 PDF 图纸<br>暂不支持 A1、A0 大尺寸图纸</div>
       </div>
 
       <!-- 功能详情页容器 -->
@@ -495,7 +502,7 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
             <button class="input-tag active" id="checklistTag" onclick="openChecklistModal()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
               <span data-i18n="audit.standard">审核标准</span>
-              <span id="stdTag" style="margin-left:6px; font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; background:rgba(37,99,235,0.08); color:#2563eb;">A · LeRouge</span>
+              <span id="stdTag" style="margin-left:6px; font-size:12px; font-weight:400; color:#1f2329;">A · LeRouge</span>
             </button>
             <button class="input-tag" id="recursiveTag" onclick="toggleRecursive()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -508,7 +515,6 @@ html[lang="en"] .issue-suggestion::before { content: "💡 Suggestion: "; font-w
         <div class="input-hint" data-i18n="input.hint">审核报告将自动保存到图纸所在文件夹（.md + .json），批量审核完成后生成汇总报告</div>
         <div class="footer-right">
   <span class="quota-info" id="quotaInfo"></span>
-  <button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none;" data-i18n="login.logout">退出登录</button>
   <span class="footer-credit" data-i18n="footer.credit">@AiworkLab 出品</span>
 </div>
       </div>
@@ -628,10 +634,10 @@ const I18N = {
     'ctx.title': '记录',
     'ctx.delete': '🗑️ 删除此记录',
     'mainHeader.default': '2D图纸审核',
-    'export.report': '导出报告',
+    'export.report': '下载报告',
     'empty.title': '今天要审核哪批图纸？',
     'empty.desc': '选择包含 PDF 2D 图纸的文件夹，AI 将逐张进行专业审核，<br>1对1 给出修改建议并保存到对应文件夹。',
-    'empty.limit': '⚠️ 每次审核不超过 10 张 PDF 图纸；暂不支持 A1、A0 大尺寸图纸',
+    'empty.limit': '每次审核不超过 10 张 PDF 图纸<br>暂不支持 A1、A0 大尺寸图纸',
     'folder.browse': '选择文件夹',
     'folder.placeholder': '输入或粘贴图纸文件夹路径，例如 D:\\图纸\\项目A\\...  也可直接拖入 PDF 图纸',
     'folder.upload': '上传 PDF 图纸文件',
@@ -678,6 +684,9 @@ const I18N = {
     'toast.folderPath': '请在输入框中粘贴图纸文件夹的完整路径',
     'toast.noSummary': '汇总报告尚未生成',
     'toast.reportSaved': '报告已保存到：{0}',
+    'toast.downloading': '正在打包下载报告…',
+    'toast.downloaded': '报告已下载到本地',
+    'toast.downloadFail': '下载失败，请重试',
     'toast.checklistSelected': '已选择 {0} 项检查',
     'toast.taskCreateFail': '创建任务失败',
     'toast.uploadFail': '上传失败',
@@ -849,10 +858,10 @@ const I18N = {
     'ctx.title': 'Record',
     'ctx.delete': '🗑️ Delete record',
     'mainHeader.default': '2D Drawing Audit',
-    'export.report': 'Export Report',
+    'export.report': 'Download Report',
     'empty.title': 'Which drawings to audit today?',
     'empty.desc': 'Select a folder containing PDF 2D drawings. AI will audit each one professionally,<br>give 1-to-1 suggestions and save them to the folder.',
-    'empty.limit': '⚠️ Max 10 PDFs per audit; A1 / A0 large sheets not supported yet',
+    'empty.limit': 'Max 10 PDFs per audit<br>A1 / A0 large sheets not supported yet',
     'folder.browse': 'Choose folder',
     'folder.placeholder': 'Enter or paste the drawing folder path, e.g. D:\\Drawings\\ProjectA\\...  You can also drop PDF files here',
     'folder.upload': 'Upload PDF drawing files',
@@ -899,6 +908,9 @@ const I18N = {
     'toast.folderPath': 'Please paste the full drawing folder path into the input box',
     'toast.noSummary': 'Summary report not generated yet',
     'toast.reportSaved': 'Report saved to: {0}',
+    'toast.downloading': 'Packaging reports...',
+    'toast.downloaded': 'Reports downloaded to local',
+    'toast.downloadFail': 'Download failed, please retry',
     'toast.checklistSelected': '{0} items selected',
     'toast.taskCreateFail': 'Failed to create task',
     'toast.uploadFail': 'Upload failed',
@@ -2319,11 +2331,32 @@ function showFeaturePage(featureId) {
 }
 
 async function exportSummary() {
-  if (!state.currentTask || !state.currentTask.summary_report_path) {
+  const taskId = state.currentTask && (state.currentTask.task_id || state.currentTask.id);
+  if (!taskId) {
     showToast(t('toast.noSummary'), 'info');
     return;
   }
-  showToast(t('toast.reportSaved', state.currentTask.summary_report_path), 'success');
+  showToast(t('toast.downloading'), 'info');
+  try {
+    const resp = await fetch(`/api/tasks/${taskId}/download`);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => null);
+      showToast((err && err.detail) ? String(err.detail) : t('toast.downloadFail'), 'error');
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit_reports_${taskId}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast(t('toast.downloaded'), 'success');
+  } catch (e) {
+    showToast(t('toast.downloadFail'), 'error');
+  }
 }
 
 async function loadHistory() {

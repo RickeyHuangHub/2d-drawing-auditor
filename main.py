@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -563,6 +563,51 @@ async def get_task_summary(task_id: str):
         "pass_rate": batch.pass_rate,
         "summary_report_path": batch.summary_report_path,
     }
+
+
+@app.get("/api/tasks/{task_id}/download")
+async def download_task_reports(task_id: str):
+    """打包下载任务的全部审核报告（.md/.json）为 zip，保存到本地。
+    覆盖两种任务：上传任务（data/uploads/<task_id>/）与文件夹任务（源目录）。"""
+    import io
+    import zipfile
+
+    batch = task_manager.get_task(task_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    # 定位任务目录：上传任务优先，文件夹任务回退到源目录
+    task_dir: Optional[Path] = None
+    upload_dir = DATA_DIR / "uploads" / task_id
+    if upload_dir.is_dir():
+        task_dir = upload_dir
+    elif batch.folder_path:
+        _p = Path(batch.folder_path)
+        if _p.is_dir():
+            task_dir = _p
+    if task_dir is None:
+        raise HTTPException(status_code=404, detail="未找到任务文件目录")
+
+    # 收集审核报告产物（不打包 PDF 原图，避免包体过大）
+    report_files = sorted(
+        p for p in task_dir.rglob("*")
+        if p.is_file() and p.suffix.lower() in (".md", ".json")
+    )
+    if not report_files:
+        raise HTTPException(status_code=404, detail="任务尚未生成报告文件")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in report_files:
+            zf.write(str(p), p.relative_to(task_dir).as_posix())
+    buf.seek(0)
+
+    filename = f"audit_reports_{task_id}.zip"
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ── WebSocket ───────────────────────────────────────────────────
