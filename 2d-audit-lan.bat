@@ -15,8 +15,8 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4"') do (
 set LANIP=%LANIP: =%
 if "%LANIP%"=="" set LANIP=127.0.0.1
 
-echo 本机局域网访问地址: http://%LANIP%:8080
-> "LAN地址.txt" echo http://%LANIP%:8080
+echo 本机局域网访问地址: http://%LANIP%:9808
+> "LAN地址.txt" echo http://%LANIP%:9808
 echo 地址已写入文件: LAN地址.txt
 echo.
 
