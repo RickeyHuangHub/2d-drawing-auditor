@@ -17,6 +17,7 @@ from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # 确保项目根目录在 path 中
@@ -38,6 +39,22 @@ from backend.models import TaskCreateRequest, AuditStatus
 from backend.task_manager import TaskManager
 
 app = FastAPI(title="Drawing Audit Expert (2D图纸审核高手)", version="1.1.0")
+# CORS：允许官网（Cloudflare Pages）跨域调用独立后端
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"^(https?://)?([\w-]+\.)*(pages\.dev|aiworklab\.top)$",
+    allow_origins=[
+        "https://www.aiworklab.top",
+        "https://aiworklab.top",
+        "https://api.aiworklab.top",
+        "http://localhost:9808",
+        "http://127.0.0.1:9808",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+)
 
 # 全局任务管理器
 task_manager = TaskManager()

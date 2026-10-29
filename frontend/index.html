@@ -1152,6 +1152,13 @@ function toggleLang() {
   }
 }
 
+// ========== API 基址（官网跨域部署） ==========
+// 本地/局域网独立运行：API_BASE 为空，请求同源；
+// 官网嵌入（www.aiworklab.top/drawing-audit）：自动指向独立后端
+const API_BASE = /^(localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname)
+  ? ''
+  : 'https://api.aiworklab.top';
+
 // ========== 全局状态 ==========
 const state = {
   currentTaskId: null,
@@ -1181,6 +1188,10 @@ const state = {
     opts.headers = opts.headers || {};
     const token = localStorage.getItem('audit_token');
     if (token) opts.headers['X-Audit-Token'] = token;
+    // 统一为绝对 API 路径附加基址（官网跨域部署；本地保持同源）
+    if (typeof url === 'string' && url.charAt(0) === '/') {
+      url = API_BASE + url;
+    }
     return _origFetch(url, opts);
   };
 })();
@@ -1360,7 +1371,8 @@ async function init() {
 function connectWebSocket() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const token = localStorage.getItem('audit_token');
-  state.ws = new WebSocket(`${proto}//${location.host}/ws${token ? '?token=' + token : ''}`);
+  const wsBase = API_BASE ? API_BASE.replace(/^http/, 'ws') : `${proto}//${location.host}`;
+  state.ws = new WebSocket(`${wsBase}/ws${token ? '?token=' + token : ''}`);
 
   state.ws.onopen = () => {
     document.getElementById('wsStatusDot').style.background = 'var(--success)';
